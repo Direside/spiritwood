@@ -1,62 +1,27 @@
 <head>
-    <style>
-        @import url('https://fonts.googleapis.com/css?family=Press+Start+2P&display=swap');
-        h1, p {
-            font-family: 'Press Start 2P';
-        }
-        #main {
-            min-width:100vw;
-            min-height: 100vh;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            flex-direction: column;
-        }
-
-        #board {
-            --width: 1;
-            --height: 1;
-            --bits: 1;
-            display:grid;
-            grid-template-rows: repeat(var(--height), var(--bits));
-            grid-template-columns: repeat(var(--width), var(--bits));
-            grid-gap: 2px 2px;
-            margin-bottom: calc(var(--bits) * 2);
-        }
-
-        .board-cell {
-            background:rgba(0,0,0,0.2);
-            border-radius:3px;
-        }
-        .board-cell.over {
-            outline:1px solid tomato;
-        }
-
-        #hand {
-            position:fixed;
-            bottom: 0;
-            right:50%;
-            transform: translateX(50%);
-            padding: 0 15px 0 15px;
-            text-align: center;
-            font-size: small;
-            background-color: rgb(206, 206, 206);
-            border: 1px solid grey;
-        }
-
-        .palette-art {
-            cursor:grab;
-            padding: 2px;
-        }
-    </style>
+    <link rel="stylesheet" type="text/css" href="styles.css" />
 </head>
 <body>
     <div id="main">
         <h1>Spiritwood</h1>
-        <div id="board"></div>
-        <div id="hand">
-            <p>Tiles</p>
-        </div>
+        <ul>
+            <li>Number of players: 
+                <select id="players" name="players">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                </select>
+            </li>
+            <li><a href="game.html?p=4">Start Game</a></li>
+            <li><a href="credits.html">Credits</a></li>
+        </ul>
+        </form>
     </div>
-    <script src="board.js"></script>
 </body>

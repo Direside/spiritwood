@@ -1,3 +1,8 @@
+// Get number of players
+var url = new URL(window.location.href);
+let players = url.searchParams.get("p");
+console.log(players)
+
 let main = document.getElementById("board");
 
 let height = 10;
