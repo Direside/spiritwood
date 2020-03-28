@@ -2,7 +2,7 @@
 h1, h2, p {
     font-family: 'Press Start 2P';
 }
-#main {
+#wrap {
     min-width:100vw;
     min-height: 100vh;
     display:flex;
@@ -20,6 +20,11 @@ h1, h2, p {
     grid-template-columns: repeat(var(--width), var(--bits));
     grid-gap: 2px 2px;
     margin-bottom: calc(var(--bits) * 2);
+    color: orange;
+}
+
+.hide {
+    display:none;
 }
 
 .board-cell {
@@ -40,6 +45,74 @@ h1, h2, p {
     font-size: small;
     background-color: rgb(206, 206, 206);
     border: 1px solid grey;
+}
+
+#dice {
+    height: 80px;
+    position:fixed;
+    top: 20px;
+    left: 0;
+    padding: 0 15px 0 15px;
+    text-align: center;
+    font-size: small;
+    background-color: rgb(206, 206, 206);
+    border: 1px solid grey;
+}
+
+#cards {
+    position:fixed;
+    top: 20px;
+    right: 0;
+    padding: 0 15px 0 15px;
+    text-align: center;
+    font-size: small;
+    background-color: rgb(206, 206, 206);
+    border: 1px solid grey;
+}
+
+.monster-deck {
+    border: 1px solid grey;
+    border-radius: 5%;
+    height: 100px;
+    width: 60px;
+    margin: 15px;
+    font-size: 6px;
+    vertical-align: middle;
+    color: papayawhip;
+}
+
+.monster-deck.empty {
+    border: 1px dashed grey;
+    height: 100px;
+    line-height: 100px;
+    width: 60px;
+    font-size: 12px;
+    color: black;
+}
+
+.monster-deck.monster {
+    background-color: darkred;
+    border: 1px solid grey;
+    color: papayawhip;
+}
+
+.monster-deck.item {
+    background-color: green;
+    border: 1px solid grey;
+    color: papayawhip;
+}
+
+#graveyard {
+    background-color: darkslategray;
+    color: papayawhip;
+}
+
+#spiderweb {
+    background-color: darkslateblue; 
+}
+
+#bones {
+    background-color: olive;
 }
 
 .palette-art {

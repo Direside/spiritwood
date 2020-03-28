@@ -1,27 +1,63 @@
 <head>
     <link rel="stylesheet" type="text/css" href="styles.css" />
 </head>
+
 <body>
-    <div id="main">
+    <div id="wrap">
         <h1>Spiritwood</h1>
-        <ul>
-            <li>Number of players: 
-                <select id="players" name="players">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                    <option value="7">7</option>
-                    <option value="8">8</option>
-                    <option value="9">9</option>
-                    <option value="10">10</option>
-                </select>
-            </li>
-            <li><a href="game.html?p=4">Start Game</a></li>
-            <li><a href="credits.html">Credits</a></li>
-        </ul>
-        </form>
+        <div id="menu">
+            <ul>
+                <li>Number of players:
+                    <select id="players" name="players">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+                </li>
+                <li><a onclick="startGame();">Start Game</a></li>
+                <li><a href="credits.html">Credits</a></li>
+            </ul>
+        </div>
+        <div id="main" class="hide">
+            <div id="dice">
+                <p>Dice</p>
+                <img id="dice-image" />
+                <button id="roll" onclick="roll('dice-image')">Roll</button>
+            </div>
+            <div id="board"></div>
+            <div id="cards">
+                <p>Cards</p>
+                <div id="graveyard" class="monster-deck" onclick="draw(window.gy, window.gyDiscard, 'discard');">
+                    <p>Graveyard</p>
+                </div>
+                <div id="spiderweb" class="monster-deck" onclick="draw(window.web, window.webDiscard, 'discard');">
+                    <p>Spiders Web</p>
+                </div>
+                <div id="bones" class="monster-deck" onclick="draw(window.bone, window.boneDiscard, 'discard');">
+                    <p>Pile of Bones</p>
+                </div>
+                <div id="discard" class="monster-deck empty"></div>
+            </div>
+            <div id="hand">
+                <p>Tiles</p>
+            </div>
+        </div>
+        <div id="credits" class="hide">
+            <h1>Credits</h1>
+            <h2>Programming</h2>
+            <p>Shane Gearon<br />James Hunter</p>
+            <h2>Art</h2>
+            <p>Shane Gearon</p>
+            <h2>Testing</h2>
+            <p>tbd</p>
+        </div>
     </div>
+    <script src="game.js" type="module"></script>
 </body>
