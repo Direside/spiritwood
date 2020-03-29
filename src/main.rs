@@ -7,6 +7,8 @@
 use rocket::State;
 use rocket_contrib::json::{JsonValue};
 
+mod dice;
+
 #[derive(Serialize, Deserialize)]
 struct Meta {
     name: String,
@@ -42,6 +44,11 @@ fn meta(meta: State<MetaHolder>) -> JsonValue {
     json!(meta.json)
 }
 
+#[get("/roll")]
+fn roll() -> JsonValue {
+    json!(dice::roll(1, 6))
+}
+
 #[catch(404)]
 fn not_found() -> JsonValue {
     json!({
@@ -53,7 +60,7 @@ fn not_found() -> JsonValue {
 fn rocket() -> rocket::Rocket {
     rocket::ignite()
         .manage(Meta::generate())
-        .mount("/", routes![meta])
+        .mount("/", routes![meta, roll])
         .register(catchers![not_found])
 }
 
