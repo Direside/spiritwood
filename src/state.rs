@@ -1,77 +1,73 @@
-struct GameDescription {
-    id: UUID,
-    href: String,
-    players: u16,
-    active_turn: u32,
-    current_state: Etag
-}
-
-impl GameDescription {
-    fn for_url(this: &self, url: String) {
-        copy(href = format!("{}/{}", url, this.href))
-    }
-}
-
-impl Default for GameDescription {
-    fn default() -> GameDescription {
-        GameDescription {
-            id: UUID::new(),
-            href: format!("/games/{}", id),
-            players: default(),
-            active_turn: default(),
-            active_player: default()
-        }
-    }
-}
+use crate::api::{Etag, Href, Key, GameDescription, Player};
 
 // complete record of the game that's stored on the server
-struct Game {
-    description: GameDescription,
-    turns: Vec<Turn>
+#[derive(Debug)]
+pub struct Game {
+    pub description: GameDescription,
+    pub players: Vec<Player>,
+    pub turns: Vec<Turn>,
 }
 
-type Etag = String
+impl Game {
+    pub fn create() -> Game {
+        Game {
+            description: GameDescription::default(),
+            players: vec![],
+            turns: vec![]
+        }
+    }
+    pub fn join_new_player(&mut self, name: String) -> Player {
+        let player = Player::new(self.players.len(), name);        
+        self.players.push(player.clone());
+        self.description.players = self.players.len();
+        player
+    }
+
+//    fn turn(&mut self) -> Turn {}
+}
 
 // impl Default for everything
 
 // turn state, i.e. what's sent to FE
-struct Turn {
+#[derive(Debug)]
+pub struct Turn {
     id: u32,
-    player: Player,
-    non_players: Vec<Player>
+    player: u16,
     decks: Decks,
-    board: Board
+    board: Board,
+    moves: Vec<Move>,
+    etag: Etag,
+    href: Href,
 }
 
-impl Default for Turn {
-    // i.e. set up the game
-    fn default() -> Turn {
-    }
+#[derive(Debug)]
+pub struct Move {
 }
 
-struct Player {
-    order: u16,
-    // colour? character?
-}
 
-struct Decks {
+#[derive(Debug)]
+pub struct Decks {
     graveyard: Vec<Card>,
     bones: Vec<Card>
 }
 
-struct Board {
+#[derive(Debug)]
+pub enum Rotation { R_0, R_90, R_180, R_270 }
+
+#[derive(Debug)]
+pub struct Board {
     // change this to be (Board, Change)?
-    tiles: Vec<Vec<Tile>>
+    tiles: Vec<Vec<(Tile, Rotation)>>
 }
 
-struct Tile {
+#[derive(Debug)]
+pub struct Tile {
     // TODO
 }
 
-struct Card {
+#[derive(Debug)]
+pub struct Card {
     // TODO
 }
 
-    
-
-
+// Moves
