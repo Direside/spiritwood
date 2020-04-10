@@ -2,7 +2,7 @@
 
 function rollDice(displayElement) {
     let result = Math.floor(Math.random() * 6) + 1;
-    displayElement.src = `./images/d${result}.png`;
+    displayElement.src = `./images/dice/d${result}.png`;
     console.log(displayElement)
 }
 
