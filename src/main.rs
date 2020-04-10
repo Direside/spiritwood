@@ -79,16 +79,34 @@ fn get_game(games: State<Games>, uuid: UUID) -> Option<Json<GameDescription>> {
     all.get(&uuid.uuid).map(|game| Json(game.description.clone()))
 }
 
+fn with_game<F: FnOnce(&mut Game) -> ()>(games: State<Games>, id: UUID, action: F)
+{
+    let mut all = games.lock().unwrap();
+    all.entry(id.uuid).and_modify(action);
+}
+
 #[put("/game/<uuid>/<name>")]
 fn join_game(games: State<Games>, uuid: UUID, name: String) -> Option<Json<Player>> {
-    let mut all = games.lock().unwrap();
     let mut player: Option<Json<Player>> = None;
-    all.entry(uuid.uuid).and_modify(|game| {
+    with_game(games, uuid, |game| {
         if game.description.state == GameState::WAITING {
-            player = Some(Json(game.join_new_player(name).clone()));
+            player = Some(Json(game.join_new_player(name)));
         }
+        // TODO: else error
     });
     player
+}
+
+// TODO make this less dumb, PUT with body to player resource
+#[put("/game/<uuid>/<name>/ready")]
+fn ready_player(games: State<Games>, uuid: UUID, name: String) -> Option<Json<Player>> {
+    let mut player: Option<Player> = None;
+    with_game(games, uuid, |game| {
+        if game.description.state == GameState::WAITING {
+            player = game.player_ready(name)
+        }
+    });
+    player.map(|p| Json(p))
 }
 
 #[get("/game/<uuid>/<name>")]
@@ -123,7 +141,7 @@ fn rocket() -> rocket::Rocket {
     rocket::ignite()
         .manage(Meta::generate())
         .manage(Mutex::new(HashMap::<Uuid, Game>::new()))
-        .mount("/", routes![meta, roll, new_game, get_game, join_game, get_player])
+        .mount("/", routes![meta, roll, new_game, get_game, join_game, get_player, ready_player])
         .register(catchers![not_found])
 }
 

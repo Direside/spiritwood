@@ -1,4 +1,4 @@
-use crate::api::{Etag, Href, Key, GameDescription, Player};
+use crate::api::{Etag, Href, Key, GameDescription, Player, GameState, PlayerState};
 
 // complete record of the game that's stored on the server
 #[derive(Debug)]
@@ -16,11 +16,34 @@ impl Game {
             turns: vec![]
         }
     }
+
+    fn fresh_description(&self) -> GameDescription {
+        GameDescription {
+            state: if self.players.iter().all(|p| p.state == PlayerState::READY) {
+                GameState::PLAYING
+            } else {
+                GameState::WAITING
+            }, ..self.description.clone()
+        }
+    }
+
     pub fn join_new_player(&mut self, name: String) -> Player {
-        let player = Player::new(self.players.len(), name);        
+        let player = Player::new(self.players.len(), name);
         self.players.push(player.clone());
         self.description.players = self.players.len();
         player
+    }
+
+    pub fn player_ready(&mut self, name: String) -> Option<Player> {
+        let result = self.players.iter_mut().find(|p| {
+            p.name == name
+        }).map(|mut p| {
+            p.state = PlayerState::READY;
+            p.clone()
+        });
+        self.description = self.fresh_description();
+
+        result
     }
 
 //    fn turn(&mut self) -> Turn {}
@@ -32,6 +55,7 @@ impl Game {
 #[derive(Debug)]
 pub struct Turn {
     id: u32,
+    gamestate: GameState,
     player: u16,
     decks: Decks,
     board: Board,
