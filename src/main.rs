@@ -15,7 +15,7 @@ use std::sync::Mutex;
 use std::collections::HashMap;
 
 use crate::state::Game;
-use crate::api::{GameDescription, GameState, Player};
+use crate::api::{GameDescription, GameState, Player, PlayerUpdate};
 
 mod api;
 mod dice;
@@ -85,25 +85,26 @@ fn with_game<F: FnOnce(&mut Game) -> ()>(games: State<Games>, id: UUID, action: 
     all.entry(id.uuid).and_modify(action);
 }
 
-#[put("/game/<uuid>/<name>")]
+#[put("/game/<uuid>/<name>", rank=3)]
 fn join_game(games: State<Games>, uuid: UUID, name: String) -> Option<Json<Player>> {
     let mut player: Option<Json<Player>> = None;
     with_game(games, uuid, |game| {
-        if game.description.state == GameState::WAITING {
-            player = Some(Json(game.join_new_player(name)));
+        player = if game.description.state == GameState::WAITING {
+            Some(Json(game.join_new_player(name)))
+        } else {
+            None
         }
-        // TODO: else error
     });
     player
 }
 
-// TODO make this less dumb, PUT with body to player resource
-#[put("/game/<uuid>/<name>/ready")]
-fn ready_player(games: State<Games>, uuid: UUID, name: String) -> Option<Json<Player>> {
+// TODO auth
+#[put("/game/<uuid>/<name>", format = "json", data = "<update>", rank=2)]
+fn ready_player(games: State<Games>, uuid: UUID, name: String, update: Json<PlayerUpdate>) -> Option<Json<Player>> {
     let mut player: Option<Player> = None;
     with_game(games, uuid, |game| {
         if game.description.state == GameState::WAITING {
-            player = game.player_ready(name)
+            player = game.update_player(&name, &update)
         }
     });
     player.map(|p| Json(p))

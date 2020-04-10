@@ -4,10 +4,10 @@ pub type Etag = Uuid;
 pub type Key = Uuid;
 pub type Href = String;
 
-#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum GameState { WAITING, PLAYING, FINISHED }
 
-#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum PlayerState { WAITING, READY, ACTIVE }
 
 // Players send these to the server, which responds with Turns
@@ -49,13 +49,19 @@ impl Default for GameDescription {
     }
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Player {
     pub name: String,
     pub state: PlayerState,
     order: usize,
     key: Key
     // colour? character?
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PlayerUpdate {
+    pub name: String,
+    pub state: PlayerState, // TODO: Option
 }
 
 impl Player {

@@ -1,4 +1,4 @@
-use crate::api::{Etag, Href, Key, GameDescription, Player, GameState, PlayerState};
+use crate::api::{Etag, Href, Key, GameDescription, Player, GameState, PlayerState, PlayerUpdate};
 
 // complete record of the game that's stored on the server
 #[derive(Debug)]
@@ -39,6 +39,23 @@ impl Game {
             p.name == name
         }).map(|mut p| {
             p.state = PlayerState::READY;
+            p.clone()
+        });
+        self.description = self.fresh_description();
+
+        result
+    }
+
+    // TODO Result
+    pub fn update_player(&mut self, name: &str, update: &PlayerUpdate) -> Option<Player> {
+        if name != update.name {
+            return None;
+        }
+
+        let result = self.players.iter_mut().find(|p| {
+            p.name == name
+        }).map(|mut p| {
+            p.state = update.state.clone();
             p.clone()
         });
         self.description = self.fresh_description();
