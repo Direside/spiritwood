@@ -6,7 +6,10 @@
 
 use uuid::Uuid;
 use rocket::State;
+use rocket::http::Method;
 use rocket_contrib::json::{Json, JsonValue};
+use rocket_cors;
+use rocket_cors::{AllowedHeaders, AllowedOrigins, Error};
 
 use rocket::request::FromParam;
 use rocket::http::RawStr;
@@ -15,7 +18,7 @@ use std::sync::Mutex;
 use std::collections::HashMap;
 
 use crate::state::Game;
-use crate::api::{GameDescription, GameState, Player};
+use crate::api::{GameDescription, GameState, Player, PlayerUpdate, Tile};
 
 mod api;
 mod dice;
@@ -85,35 +88,45 @@ fn with_game<F: FnOnce(&mut Game) -> ()>(games: State<Games>, id: UUID, action: 
     all.entry(id.uuid).and_modify(action);
 }
 
-#[put("/game/<uuid>/<name>")]
+#[put("/game/<uuid>/<name>", rank=3)]
 fn join_game(games: State<Games>, uuid: UUID, name: String) -> Option<Json<Player>> {
     let mut player: Option<Json<Player>> = None;
     with_game(games, uuid, |game| {
-        if game.description.state == GameState::WAITING {
-            player = Some(Json(game.join_new_player(name)));
+        player = if game.description.state == GameState::WAITING {
+            Some(Json(game.join_new_player(name)))
+        } else {
+            None
         }
-        // TODO: else error
     });
     player
 }
 
-// TODO make this less dumb, PUT with body to player resource
-#[put("/game/<uuid>/<name>/ready")]
-fn ready_player(games: State<Games>, uuid: UUID, name: String) -> Option<Json<Player>> {
+// TODO auth
+#[put("/game/<uuid>/<name>", format = "json", data = "<update>", rank=2)]
+fn ready_player(games: State<Games>, uuid: UUID, name: String, update: Json<PlayerUpdate>) -> Option<Json<Player>> {
     let mut player: Option<Player> = None;
     with_game(games, uuid, |game| {
         if game.description.state == GameState::WAITING {
-            player = game.player_ready(name)
+            player = game.update_player(&name, &update)
         }
     });
     player.map(|p| Json(p))
 }
 
-#[get("/game/<uuid>/<name>")]
+#[get("/game/<uuid>/<name>", rank=2)]
 fn get_player(games: State<Games>, uuid: UUID, name: String) -> Option<Json<Player>> {
     games.lock().unwrap().get(&uuid.uuid).map(|game| {
         game.players.iter().find(|p| p.name == name).map(|p| Json(p.clone()))
     }).flatten()
+}
+
+#[get("/game/<uuid>/tile", rank=1)]
+fn get_tile(games: State<Games>, uuid: UUID) -> Option<Json<Tile>> {
+    let mut tile: Option<Tile> = None;
+    with_game(games, uuid, |game| {
+        tile = game.pop_tile()
+    });
+    tile.map(|t| Json(t))
 }
 
 struct UUID {
@@ -137,14 +150,25 @@ fn not_found() -> JsonValue {
     })
 }
 
-fn rocket() -> rocket::Rocket {
-    rocket::ignite()
+fn rocket() -> Result<rocket::Rocket, Error> {
+    let cors = rocket_cors::CorsOptions {
+        allowed_origins: AllowedOrigins::all(),
+        allowed_methods: vec![Method::Get].into_iter().map(From::from).collect(),
+        allowed_headers: AllowedHeaders::some(&["Authorization", "Accept"]),
+        allow_credentials: true,
+        ..Default::default()
+    }.to_cors()?;
+
+    Ok(rocket::ignite()
         .manage(Meta::generate())
         .manage(Mutex::new(HashMap::<Uuid, Game>::new()))
-        .mount("/", routes![meta, roll, new_game, get_game, join_game, get_player, ready_player])
-        .register(catchers![not_found])
+        .mount("/", routes![meta, roll, new_game, get_game, join_game,
+                            get_player, ready_player, get_tile])
+        .attach(cors)
+        .register(catchers![not_found]))
 }
 
-fn main() {
-    rocket().launch();
+fn main() -> Result<(), Error> {
+    rocket()?.launch();
+    Ok(())
 }
