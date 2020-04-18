@@ -164,6 +164,7 @@ fn rocket() -> Result<rocket::Rocket, Error> {
         .manage(Mutex::new(HashMap::<Uuid, Game>::new()))
         .mount("/", routes![meta, roll, new_game, get_game, join_game,
                             get_player, ready_player, get_tile])
+        .mount("/", rocket_cors::catch_all_options_routes())
         .attach(cors)
         .register(catchers![not_found]))
 }
