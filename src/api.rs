@@ -74,3 +74,10 @@ impl Player {
         }
     }
 }
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Tile {
+    pub id: u32,
+    pub image: String,
+    pub symbol: char,
+}

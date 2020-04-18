@@ -15,7 +15,7 @@ use std::sync::Mutex;
 use std::collections::HashMap;
 
 use crate::state::Game;
-use crate::api::{GameDescription, GameState, Player, PlayerUpdate};
+use crate::api::{GameDescription, GameState, Player, PlayerUpdate, Tile};
 
 mod api;
 mod dice;
@@ -110,11 +110,20 @@ fn ready_player(games: State<Games>, uuid: UUID, name: String, update: Json<Play
     player.map(|p| Json(p))
 }
 
-#[get("/game/<uuid>/<name>")]
+#[get("/game/<uuid>/<name>", rank=2)]
 fn get_player(games: State<Games>, uuid: UUID, name: String) -> Option<Json<Player>> {
     games.lock().unwrap().get(&uuid.uuid).map(|game| {
         game.players.iter().find(|p| p.name == name).map(|p| Json(p.clone()))
     }).flatten()
+}
+
+#[get("/game/<uuid>/tile", rank=1)]
+fn get_tile(games: State<Games>, uuid: UUID) -> Option<Json<Tile>> {
+    let mut tile: Option<Tile> = None;
+    with_game(games, uuid, |game| {
+        tile = game.pop_tile()
+    });
+    tile.map(|t| Json(t))
 }
 
 struct UUID {
@@ -142,7 +151,8 @@ fn rocket() -> rocket::Rocket {
     rocket::ignite()
         .manage(Meta::generate())
         .manage(Mutex::new(HashMap::<Uuid, Game>::new()))
-        .mount("/", routes![meta, roll, new_game, get_game, join_game, get_player, ready_player])
+        .mount("/", routes![meta, roll, new_game, get_game, join_game,
+                            get_player, ready_player, get_tile])
         .register(catchers![not_found])
 }
 
