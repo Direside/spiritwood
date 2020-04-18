@@ -1,7 +1,4 @@
-/*********************************************************
-gets the value of a cookie
-**********************************************************/
-document.getCookie = function(sName)
+function getCookie(sName)
 {
     sName = sName.toLowerCase();
     var oCrumbles = document.cookie.split(';');
@@ -15,20 +12,16 @@ document.getCookie = function(sName)
     }
     return '';
 }
-/*********************************************************
-sets the value of a cookie
-**********************************************************/
-document.setCookie = function(sName,sValue)
+
+function setCookie(sName,sValue)
 {
     var oDate = new Date();
     oDate.setYear(oDate.getFullYear()+1);
     var sCookie = encodeURIComponent(sName) + '=' + encodeURIComponent(sValue) + ';expires=' + oDate.toGMTString() + ';path=/';
     document.cookie= sCookie;
 }
-/*********************************************************
-removes the value of a cookie
-**********************************************************/
-document.clearCookie = function(sName)
+
+function clearCookie(sName)
 {
     setCookie(sName,'');
 }

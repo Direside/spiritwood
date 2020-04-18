@@ -1,83 +1,130 @@
 'use strict';
 
-import {shuffle, shuffle2, addToDeck, drawCard} from './card.js';
-import {rollDice} from './dice.js';
-import { getCookie, setCookie } from './cookie'
+import { shuffle, shuffle2, addToDeck, drawCard } from './card.js';
+import { rollDice } from './dice.js';
+import { getCookie, setCookie, clearCookie } from './cookie.js'
 
 
 let menu = document.getElementById("menu");
+let ready = document.getElementById("ready");
 let main = document.getElementById("main");
 let board = document.getElementById("board");
 let credits = document.getElementById("credits");
-
-let selectedPlayers = document.getElementById("players");
-
-window.players = [];
-window.currPlayer = 0;
+let name = document.getElementById("playerName");
 
 let height = 10;
 let width = 15;
 let bits = "36px"
 
+
+if (!window.playerName) {
+    changeName();
+}
+
+function changeName() {
+    window.playerName = prompt("Please enter your name", "Harry Potter");
+    setCookie("playerName", decodeURIComponent(window.playerName))
+    name.innerText = getCookie("playerName")
+}
+
+window.clearPlayName = function clearPlayName() {
+    clearCookie("playerName")
+    changeName();
+}
+
 window.newGame = function newGame() {
     fetch("http://localhost:8000/game", {
-        mode: 'no-cors',
+        // mode: 'no-cors',
         method: "POST",
         headers: new Headers({
             "Access-Control-Allow-Origin": "*",
             'Access-Control-Allow-Headers': "*"
         })
     })
-    .then((response) => {
-        console.log(response)
-        return response.text();
-      })
-      .then((data) => {
-        console.log(data);
+        .then((response) => {
+            console.log(response)
+            return response.json();
+        })
+        .then((data) => {
+            console.log(data);
+            window.gameID = data.id
+            console.log(window.gameID)
+            window.joinGame()
+        });
+}
 
-        window.game_id = data.id
-        window.playerName = getCookie("playerName")
-        if (!window.playerName) {
-            window.playerName = prompt("Please enter your name", "Harry Potter");
-            setCookie("playerName", window.playerName)
-        }
+window.joinGame = function joinGame() {
+    window.playerName = getCookie("playerName")
 
-      });
+    if (!window.gameID) {
+        window.gameID = prompt("Game ID")
+    }
+
+    document.getElementById("debugGameID").innerText = window.gameID
+    fetch(`http://localhost:8000/game/${window.gameID}?player=${window.playerName}`, {
+        method: "PUT"
+    }).then((data) => {
+        window.readyScreen()
+    })
+}
+
+window.updatePlayerList = function getGame() {
+    fetch(`http://localhost:8000/game/${window.gameID}/`, {
+        method: "GET"
+    })
+        .then((response) => {
+            console.log(response)
+            return response.json();
+        })
+        .then((data) => {
+            console.log(data);
+            window.players = data.players
+            let players = document.getElementById("players")
+            let playersHTML = ""
+
+            window.players.forEach((player) => {
+                playersHTML += `<li>${player}</li>`
+            })
+
+            players.innerHTML = playersHTML
+        })
+}
+
+window.readyScreen = function readyScreen() {
+    ready.classList.remove("hide");
+    menu.classList.add("hide");
+
+    location.href = `http://localhost:5000/#${window.gameID}`
+
+    window.updatePlayerList()
+    window.gettingPlayers = setInterval(window.updatePlayerList, 1000);
 }
 
 window.startGame = function startGame() {
-    window.newGame()
-    // Get number of players
-    let numPlayers = selectedPlayers.options[selectedPlayers.selectedIndex].value;
-
-    for(let i=0;i<numPlayers;i++){
-    let p = {
-        name: "Player " + (i+1),
-        x: null,
-        y: null
-    }
-    window.players.push(p);
-    }
-
-    main.classList.remove("hide");
-    menu.classList.add("hide");
-
-    window.players.forEach((_,i) => {
-        let pos = 3+i*2
-        document.getElementById(`board-${pos}-8`).innerText = i;
-        window.players[i].x = pos;
-        window.players[i].y = 8;
+    console.log(window.gettingPlayers)
+    clearInterval(window.gettingPlayers);
+    fetch(`http://localhost:8000/game/${window.gameID}/start`, {
+        method: "PUT"
+    }).then((r) => {
+        return r.json();
+    }).then(data => {
+        main.classList.remove("hide");
+        ready.classList.add("hide");
+        menu.classList.add("hide");
     })
-
-    console.log(window.players);
 }
 
-window.roll = function roll(id){
+window.credit = function credit() {
+    credits.classList.remove("hide");
+    menu.classList.add("hide");
+}
+
+window.roll = function roll(id) {
     let el = document.getElementById(id)
     rollDice(el);
 }
 
-window.draw = function draw(deck, discard, displayId){
+window.draw = function draw(deck, discard, displayId) {
     let discardPile = document.getElementById(displayId);
     let card = drawCard(deck, discard);
     discardPile.innerHTML = `<span>${card}</span>`
@@ -90,18 +137,18 @@ window.addEventListener('keyup', keyPress);
 function keyPress(e) {
     let x = window.players[window.currPlayer]["x"]
     let y = window.players[window.currPlayer]["y"]
-    switch(e.which) {
+    switch (e.which) {
         case 37: // left
-            if ( x > 0 ) { 
+            if (x > 0) {
                 document.getElementById(`board-${x}-${y}`).innerText = "";
                 let xpos = x - 1;
                 window.players[window.currPlayer]["x"] = xpos;
                 document.getElementById(`board-${xpos}-${y}`).innerText = window.currPlayer;
             }
-        break;
+            break;
 
         case 38: // up
-            if ( y > 0 ) { 
+            if (y > 0) {
                 document.getElementById(`board-${x}-${y}`).innerText = "";
                 let ypos = y - 1;
                 window.players[window.currPlayer]["y"] = ypos;
@@ -110,7 +157,7 @@ function keyPress(e) {
             break;
 
         case 39: // right
-            if ( x < 16 ) { 
+            if (x < 16) {
                 document.getElementById(`board-${x}-${y}`).innerText = "";
                 let xpos = x + 1;
                 window.players[currPlayer]["x"] = xpos;
@@ -119,7 +166,7 @@ function keyPress(e) {
             break;
 
         case 40: // down
-            if ( y < 16 ) { 
+            if (y < 16) {
                 document.getElementById(`board-${x}-${y}`).innerText = "";
                 let ypos = y + 1;
                 window.players[currPlayer]["y"] = ypos;

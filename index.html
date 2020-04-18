@@ -5,25 +5,21 @@
 <body>
     <div id="wrap">
         <h1>Spiritwood</h1>
+        <p>Hi, <span id="playerName"></span></p>
+        <div>DEBUG MODE: <span id="debugGameID"></span></div>
         <div id="menu">
             <ul>
-                <li>Number of players:
-                    <select id="players" name="players">
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                    </select>
-                </li>
-                <li><a onclick="startGame();">Start Game</a></li>
-                <li><a href="credits.html">Credits</a></li>
+                <li><a onclick="newGame();">New Game</a></li>
+                <li><a onclick="joinGame();">Join Game</a></li>
+                <li><a onclick="credit();">Credits</a></li>
+                <li><a onclick="clearPlayName();">Change Name</a></li>
             </ul>
+        </div>
+        <div id="ready" class="hide">
+            <ul id="players">
+                Waiting for players...
+            </ul>
+            <a onclick="startGame();">Start!</a>
         </div>
         <div id="main" class="hide">
             <div id="dice">
@@ -52,11 +48,11 @@
         <div id="credits" class="hide">
             <h1>Credits</h1>
             <h2>Programming</h2>
-            <p>Shane Gearon<br />James Hunter</p>
+            <p>Shane Gearon<br />James Hunter<br />Edd Steel</p>
             <h2>Art</h2>
             <p>Shane Gearon</p>
             <h2>Testing</h2>
-            <p>tbd</p>
+            <p>Edd Steel</p>
         </div>
     </div>
     <script src="game.js" type="module"></script>
