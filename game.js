@@ -2,6 +2,8 @@
 
 import {shuffle, shuffle2, addToDeck, drawCard} from './card.js';
 import {rollDice} from './dice.js';
+import { getCookie, setCookie } from './cookie'
+
 
 let menu = document.getElementById("menu");
 let main = document.getElementById("main");
@@ -17,7 +19,34 @@ let height = 10;
 let width = 15;
 let bits = "36px"
 
+window.newGame = function newGame() {
+    fetch("http://localhost:8000/game", {
+        mode: 'no-cors',
+        method: "POST",
+        headers: new Headers({
+            "Access-Control-Allow-Origin": "*",
+            'Access-Control-Allow-Headers': "*"
+        })
+    })
+    .then((response) => {
+        console.log(response)
+        return response.text();
+      })
+      .then((data) => {
+        console.log(data);
+
+        window.game_id = data.id
+        window.playerName = getCookie("playerName")
+        if (!window.playerName) {
+            window.playerName = prompt("Please enter your name", "Harry Potter");
+            setCookie("playerName", window.playerName)
+        }
+
+      });
+}
+
 window.startGame = function startGame() {
+    window.newGame()
     // Get number of players
     let numPlayers = selectedPlayers.options[selectedPlayers.selectedIndex].value;
 
@@ -162,17 +191,25 @@ board.style.setProperty("--bits", bits)
 const xs = Array.from({ length: width }, (_, i) => i)
 const ys = Array.from({ length: height }, (_, i) => i)
 
-const images = [
-    "images/north-south-east.png",
-    "images/south-east-west.png",
-    "images/east-west.png",
-    "images/south-east.png"
+const tiles = [
+    {
+        id: 1,
+        type: "+",
+        image: "images/tiles/cross.png"
+    },
+    {
+        id: 2,
+        type: "-",
+        image: "images/tiles/straight.png"
+    },
+    {
+        id: 3,
+        type: "T",
+        image: "images/tiles/tee.png"
+    }
 ]
 
 var current = ""
-const tiles = []
-tiles[15] = []
-tiles[15][15] = "/images/heart-1.jpg"
 
 window.dragStart = function dragStart(event) {
     current = event.target.dataset.url
@@ -228,6 +265,7 @@ paint()
 
 const palette = document.createElement("div")
 palette.classList.add("palette")
+const images = []
 for (let img of images) {
     const paletteEl = document.createElement("img")
     paletteEl.src = img

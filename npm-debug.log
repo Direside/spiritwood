@@ -1,0 +1,192 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/usr/bin/node', '/usr/bin/npm', 'i', '--save', 'cookie-js' ]
+2 info using npm@3.5.2
+3 info using node@v8.10.0
+4 silly loadCurrentTree Starting
+5 silly install loadCurrentTree
+6 silly install readLocalPackageData
+7 silly fetchPackageMetaData cookie-js
+8 silly fetchNamedPackageData cookie-js
+9 silly mapToRegistry name cookie-js
+10 silly mapToRegistry using default registry
+11 silly mapToRegistry registry https://registry.npmjs.org/
+12 silly mapToRegistry uri https://registry.npmjs.org/cookie-js
+13 verbose request uri https://registry.npmjs.org/cookie-js
+14 verbose request no auth needed
+15 info attempt registry request try #1 at 6:20:50 PM
+16 verbose request id f36f7deba6d8289e
+17 verbose etag W/"414065a6788a3fd20715fae8fb7cbe32"
+18 verbose lastModified Sat, 26 May 2018 20:50:28 GMT
+19 http request GET https://registry.npmjs.org/cookie-js
+20 http 304 https://registry.npmjs.org/cookie-js
+21 verbose headers { date: 'Sat, 18 Apr 2020 01:20:53 GMT',
+21 verbose headers   connection: 'keep-alive',
+21 verbose headers   'set-cookie':
+21 verbose headers    [ '__cfduid=dabf5aaf19af85be5b6e353e19d2655141587172853; expires=Mon, 18-May-20 01:20:53 GMT; path=/; domain=.npmjs.org; HttpOnly; SameSite=Lax' ],
+21 verbose headers   'cf-ray': '585a90dbeb76f4ba-YVR',
+21 verbose headers   age: '94',
+21 verbose headers   'cache-control': 'public, max-age=300',
+21 verbose headers   etag: '"414065a6788a3fd20715fae8fb7cbe32"',
+21 verbose headers   'last-modified': 'Sat, 26 May 2018 20:50:28 GMT',
+21 verbose headers   vary: 'Accept-Encoding',
+21 verbose headers   'cf-cache-status': 'HIT',
+21 verbose headers   'expect-ct': 'max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"',
+21 verbose headers   server: 'cloudflare',
+21 verbose headers   'cf-request-id': '022c78dd700000f4ba19bc9200000001' }
+22 silly get cb [ 304,
+22 silly get   { date: 'Sat, 18 Apr 2020 01:20:53 GMT',
+22 silly get     connection: 'keep-alive',
+22 silly get     'set-cookie':
+22 silly get      [ '__cfduid=dabf5aaf19af85be5b6e353e19d2655141587172853; expires=Mon, 18-May-20 01:20:53 GMT; path=/; domain=.npmjs.org; HttpOnly; SameSite=Lax' ],
+22 silly get     'cf-ray': '585a90dbeb76f4ba-YVR',
+22 silly get     age: '94',
+22 silly get     'cache-control': 'public, max-age=300',
+22 silly get     etag: '"414065a6788a3fd20715fae8fb7cbe32"',
+22 silly get     'last-modified': 'Sat, 26 May 2018 20:50:28 GMT',
+22 silly get     vary: 'Accept-Encoding',
+22 silly get     'cf-cache-status': 'HIT',
+22 silly get     'expect-ct': 'max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"',
+22 silly get     server: 'cloudflare',
+22 silly get     'cf-request-id': '022c78dd700000f4ba19bc9200000001' } ]
+23 verbose etag https://registry.npmjs.org/cookie-js from cache
+24 verbose get saving cookie-js to /home/direside/.npm/registry.npmjs.org/cookie-js/.cache.json
+25 silly install normalizeTree
+26 silly loadCurrentTree Finishing
+27 silly loadIdealTree Starting
+28 silly install loadIdealTree
+29 silly cloneCurrentTree Starting
+30 silly install cloneCurrentTreeToIdealTree
+31 silly cloneCurrentTree Finishing
+32 silly loadShrinkwrap Starting
+33 silly install loadShrinkwrap
+34 silly loadShrinkwrap Finishing
+35 silly loadAllDepsIntoIdealTree Starting
+36 silly install loadAllDepsIntoIdealTree
+37 silly resolveWithNewModule cookie-js@0.0.1 checking installable status
+38 silly cache add args [ 'cookie-js', null ]
+39 verbose cache add spec cookie-js
+40 silly cache add parsed spec Result {
+40 silly cache add   raw: 'cookie-js',
+40 silly cache add   scope: null,
+40 silly cache add   name: 'cookie-js',
+40 silly cache add   rawSpec: '',
+40 silly cache add   spec: 'latest',
+40 silly cache add   type: 'tag' }
+41 silly addNamed cookie-js@latest
+42 verbose addNamed "latest" is being treated as a dist-tag for cookie-js
+43 info addNameTag [ 'cookie-js', 'latest' ]
+44 silly mapToRegistry name cookie-js
+45 silly mapToRegistry using default registry
+46 silly mapToRegistry registry https://registry.npmjs.org/
+47 silly mapToRegistry uri https://registry.npmjs.org/cookie-js
+48 verbose addNameTag registry:https://registry.npmjs.org/cookie-js not in flight; fetching
+49 verbose get https://registry.npmjs.org/cookie-js not expired, no request
+50 silly addNameTag next cb for cookie-js with tag latest
+51 silly addNamed cookie-js@0.0.1
+52 verbose addNamed "0.0.1" is a plain semver version for cookie-js
+53 silly cache afterAdd cookie-js@0.0.1
+54 verbose afterAdd /home/direside/.npm/cookie-js/0.0.1/package/package.json not in flight; writing
+55 verbose afterAdd /home/direside/.npm/cookie-js/0.0.1/package/package.json written
+56 silly loadAllDepsIntoIdealTree Finishing
+57 silly idealTree:prePrune spiritwood
+57 silly idealTree:prePrune └── cookie-js@0.0.1
+58 silly loadIdealTree Finishing
+59 silly currentTree spiritwood
+60 silly idealTree spiritwood
+60 silly idealTree └── cookie-js@0.0.1
+61 silly generateActionsToTake Starting
+62 silly install generateActionsToTake
+63 silly generateActionsToTake Finishing
+64 silly diffTrees action count 1
+65 silly diffTrees add cookie-js@0.0.1
+66 silly decomposeActions action count 8
+67 silly decomposeActions fetch cookie-js@0.0.1
+68 silly decomposeActions extract cookie-js@0.0.1
+69 silly decomposeActions test cookie-js@0.0.1
+70 silly decomposeActions preinstall cookie-js@0.0.1
+71 silly decomposeActions build cookie-js@0.0.1
+72 silly decomposeActions install cookie-js@0.0.1
+73 silly decomposeActions postinstall cookie-js@0.0.1
+74 silly decomposeActions finalize cookie-js@0.0.1
+75 silly executeActions Starting
+76 silly install executeActions
+77 silly doSerial global-install 0
+78 silly doParallel fetch 1
+79 verbose lock using /home/direside/.npm/_locks/staging-cdc264be97118033.lock for /mnt/c/Users/shanz/projects/spiritwood/node_modules/.staging
+80 silly doParallel extract 1
+81 silly extract cookie-js@0.0.1
+82 verbose unbuild node_modules/.staging/cookie-js-a67c6b7d
+83 silly gentlyRm /mnt/c/Users/shanz/projects/spiritwood/node_modules/.staging/cookie-js-a67c6b7d is being purged from base /mnt/c/Users/shanz/projects/spiritwood
+84 verbose gentlyRm don't care about contents; nuking /mnt/c/Users/shanz/projects/spiritwood/node_modules/.staging/cookie-js-a67c6b7d
+85 verbose tar unpack /home/direside/.npm/cookie-js/0.0.1/package.tgz
+86 verbose tar unpacking to /mnt/c/Users/shanz/projects/spiritwood/node_modules/.staging/cookie-js-a67c6b7d
+87 silly gentlyRm /mnt/c/Users/shanz/projects/spiritwood/node_modules/.staging/cookie-js-a67c6b7d is being purged
+88 verbose gentlyRm don't care about contents; nuking /mnt/c/Users/shanz/projects/spiritwood/node_modules/.staging/cookie-js-a67c6b7d
+89 silly gunzTarPerm modes [ '755', '644' ]
+90 silly gunzTarPerm extractEntry package.json
+91 silly gunzTarPerm modified mode [ 'package.json', 436, 420 ]
+92 silly gunzTarPerm extractEntry .npmignore
+93 silly gunzTarPerm modified mode [ '.npmignore', 436, 420 ]
+94 silly gunzTarPerm extractEntry README.md
+95 silly gunzTarPerm modified mode [ 'README.md', 436, 420 ]
+96 silly gunzTarPerm extractEntry LICENSE
+97 silly gunzTarPerm modified mode [ 'LICENSE', 436, 420 ]
+98 silly gunzTarPerm extractEntry cookie.js
+99 silly gunzTarPerm modified mode [ 'cookie.js', 436, 420 ]
+100 silly gunzTarPerm extractEntry .travis.yml
+101 silly gunzTarPerm modified mode [ '.travis.yml', 436, 420 ]
+102 silly gunzTarPerm extractEntry bower.json
+103 silly gunzTarPerm modified mode [ 'bower.json', 438, 420 ]
+104 silly gunzTarPerm extractEntry test/parse.js
+105 silly gunzTarPerm modified mode [ 'test/parse.js', 436, 420 ]
+106 silly gunzTarPerm extractEntry test/serialize.js
+107 silly gunzTarPerm modified mode [ 'test/serialize.js', 436, 420 ]
+108 silly gunzTarPerm extractEntry test/mocha.opts
+109 silly gunzTarPerm modified mode [ 'test/mocha.opts', 436, 420 ]
+110 silly gentlyRm /mnt/c/Users/shanz/projects/spiritwood/node_modules/.staging/cookie-js-a67c6b7d/node_modules is being purged
+111 verbose gentlyRm don't care about contents; nuking /mnt/c/Users/shanz/projects/spiritwood/node_modules/.staging/cookie-js-a67c6b7d/node_modules
+112 silly doParallel preinstall 1
+113 silly preinstall cookie-js@0.0.1 /mnt/c/Users/shanz/projects/spiritwood/node_modules/.staging/cookie-js-a67c6b7d
+114 info lifecycle cookie-js@0.0.1~preinstall: cookie-js@0.0.1
+115 silly lifecycle cookie-js@0.0.1~preinstall: no script for preinstall, continuing
+116 silly doReverseSerial remove 0
+117 silly doSerial move 0
+118 silly doSerial finalize 1
+119 silly finalize /mnt/c/Users/shanz/projects/spiritwood/node_modules/cookie-js
+120 verbose unlock done using /home/direside/.npm/_locks/staging-cdc264be97118033.lock for /mnt/c/Users/shanz/projects/spiritwood/node_modules/.staging
+121 silly rollbackFailedOptional Starting
+122 silly rollbackFailedOptional Finishing
+123 silly runTopLevelLifecycles Starting
+124 silly runTopLevelLifecycles Finishing
+125 silly install printInstalled
+126 warn enoent ENOENT: no such file or directory, open '/mnt/c/Users/shanz/projects/spiritwood/package.json'
+127 warn spiritwood No description
+128 warn spiritwood No repository field.
+129 warn spiritwood No README data
+130 warn spiritwood No license field.
+131 verbose stack Error: EACCES: permission denied, rename '/mnt/c/Users/shanz/projects/spiritwood/node_modules/.staging/cookie-js-a67c6b7d' -> '/mnt/c/Users/shanz/projects/spiritwood/node_modules/cookie-js'
+131 verbose stack     at destStatted (/usr/share/npm/lib/install/action/finalize.js:25:7)
+131 verbose stack     at FSReqWrap.oncomplete (fs.js:152:21)
+131 verbose stack
+131 verbose stack Error: EACCES: permission denied, rename '/mnt/c/Users/shanz/projects/spiritwood/node_modules/.staging/cookie-js-a67c6b7d' -> '/mnt/c/Users/shanz/projects/spiritwood/node_modules/cookie-js'
+132 verbose cwd /mnt/c/Users/shanz/projects/spiritwood
+133 error Linux 4.4.0-18362-Microsoft
+134 error argv "/usr/bin/node" "/usr/bin/npm" "i" "--save" "cookie-js"
+135 error node v8.10.0
+136 error npm  v3.5.2
+137 error path /mnt/c/Users/shanz/projects/spiritwood/node_modules/.staging/cookie-js-a67c6b7d
+138 error code EACCES
+139 error errno -13
+140 error syscall rename
+141 error Error: EACCES: permission denied, rename '/mnt/c/Users/shanz/projects/spiritwood/node_modules/.staging/cookie-js-a67c6b7d' -> '/mnt/c/Users/shanz/projects/spiritwood/node_modules/cookie-js'
+141 error     at destStatted (/usr/share/npm/lib/install/action/finalize.js:25:7)
+141 error     at FSReqWrap.oncomplete (fs.js:152:21)
+141 error
+141 error Error: EACCES: permission denied, rename '/mnt/c/Users/shanz/projects/spiritwood/node_modules/.staging/cookie-js-a67c6b7d' -> '/mnt/c/Users/shanz/projects/spiritwood/node_modules/cookie-js'
+141 error  Error: EACCES: permission denied, rename '/mnt/c/Users/shanz/projects/spiritwood/node_modules/.staging/cookie-js-a67c6b7d' -> '/mnt/c/Users/shanz/projects/spiritwood/node_modules/cookie-js'
+141 error     at destStatted (/usr/share/npm/lib/install/action/finalize.js:25:7)
+141 error     at FSReqWrap.oncomplete (fs.js:152:21)
+141 error
+141 error Error: EACCES: permission denied, rename '/mnt/c/Users/shanz/projects/spiritwood/node_modules/.staging/cookie-js-a67c6b7d' -> '/mnt/c/Users/shanz/projects/spiritwood/node_modules/cookie-js'
+142 error Please try running this command again as root/Administrator.
+143 verbose exit [ -13, true ]
