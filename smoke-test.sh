@@ -9,14 +9,12 @@ id=$($CRL -X POST $SVR/game | jq -r .id)
 
 $CRL $SVR/game/$id | jq .
 
-$CRL -X PUT $SVR/game/$id/alice
-$CRL -X PUT $SVR/game/$id/bob
-$CRL -X PUT $SVR/game/$id/charles
+$CRL -X PUT $SVR/game/$id?player=alice
+$CRL -X PUT $SVR/game/$id?player=bob
+$CRL -X PUT $SVR/game/$id?player=charles
 
 $CRL $SVR/game/$id | jq .
 
-$CRL -X PUT $SVR/game/$id/alice -d '{"name": "alice", "state": "READY"}' -H 'Content-Type: application/json'
-$CRL -X PUT $SVR/game/$id/bob -d '{"name": "bob", "state": "READY"}' -H 'Content-Type: application/json'
-$CRL -X PUT $SVR/game/$id/charles -d '{"name": "charles", "state": "READY"}' -H 'Content-Type: application/json'
+$CRL -X PUT $SVR/game/$id/start
 
 $CRL $SVR/game/$id | jq .
