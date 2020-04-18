@@ -9,6 +9,7 @@ use rocket::State;
 use rocket::http::Method;
 use rocket_contrib::json::{Json, JsonValue};
 use rocket_cors;
+use rocket_cors::catch_all_options_routes;
 use rocket_cors::{AllowedHeaders, AllowedOrigins, Error};
 
 use rocket::request::FromParam;
@@ -153,8 +154,8 @@ fn not_found() -> JsonValue {
 fn rocket() -> Result<rocket::Rocket, Error> {
     let cors = rocket_cors::CorsOptions {
         allowed_origins: AllowedOrigins::all(),
-        allowed_methods: vec![Method::Get].into_iter().map(From::from).collect(),
-        allowed_headers: AllowedHeaders::some(&["Authorization", "Accept"]),
+        allowed_methods: vec![Method::Get, Method::Post, Method::Put, Method::Options].into_iter().map(From::from).collect(),
+        allowed_headers: AllowedHeaders::all(),
         allow_credentials: true,
         ..Default::default()
     }.to_cors()?;
@@ -164,7 +165,7 @@ fn rocket() -> Result<rocket::Rocket, Error> {
         .manage(Mutex::new(HashMap::<Uuid, Game>::new()))
         .mount("/", routes![meta, roll, new_game, get_game, join_game,
                             get_player, ready_player, get_tile])
-        .mount("/", rocket_cors::catch_all_options_routes())
+//        .mount("/", catch_all_options_routes())
         .attach(cors)
         .register(catchers![not_found]))
 }
