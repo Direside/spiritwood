@@ -6,7 +6,10 @@
 
 use uuid::Uuid;
 use rocket::State;
+use rocket::http::Method;
 use rocket_contrib::json::{Json, JsonValue};
+use rocket_cors;
+use rocket_cors::{AllowedHeaders, AllowedOrigins, Error};
 
 use rocket::request::FromParam;
 use rocket::http::RawStr;
@@ -147,15 +150,25 @@ fn not_found() -> JsonValue {
     })
 }
 
-fn rocket() -> rocket::Rocket {
-    rocket::ignite()
+fn rocket() -> Result<rocket::Rocket, Error> {
+    let cors = rocket_cors::CorsOptions {
+        allowed_origins: AllowedOrigins::all(),
+        allowed_methods: vec![Method::Get].into_iter().map(From::from).collect(),
+        allowed_headers: AllowedHeaders::some(&["Authorization", "Accept"]),
+        allow_credentials: true,
+        ..Default::default()
+    }.to_cors()?;
+
+    Ok(rocket::ignite()
         .manage(Meta::generate())
         .manage(Mutex::new(HashMap::<Uuid, Game>::new()))
         .mount("/", routes![meta, roll, new_game, get_game, join_game,
                             get_player, ready_player, get_tile])
-        .register(catchers![not_found])
+        .attach(cors)
+        .register(catchers![not_found]))
 }
 
-fn main() {
-    rocket().launch();
+fn main() -> Result<(), Error> {
+    rocket()?.launch();
+    Ok(())
 }
