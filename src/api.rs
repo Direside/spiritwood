@@ -29,7 +29,7 @@ pub struct GameDescription {
     pub id: Uuid,
     pub state: GameState,
     pub href: Href,
-    pub players: usize,
+    pub players: Vec<String>,
     pub turn: u32,
     pub current: Etag,
 }
@@ -42,7 +42,7 @@ impl Default for GameDescription {
             id: id,
             state: GameState::WAITING,
             href: format!("/game/{}", id),
-            players: 0,
+            players: vec![],
             turn: 0,
             current: etag
         }
@@ -52,7 +52,6 @@ impl Default for GameDescription {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Player {
     pub name: String,
-    pub state: PlayerState,
     order: usize,
     key: Key
     // colour? character?
@@ -68,7 +67,6 @@ impl Player {
     pub fn new(order: usize, name: String) -> Player {
         Player {
             name: name,
-            state: PlayerState::WAITING,
             order: order,
             key: Uuid::new_v4()
         }

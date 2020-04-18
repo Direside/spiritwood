@@ -76,10 +76,7 @@ fn new_game(games: State<Games>) -> Json<GameDescription> {
 
 #[get("/game/<uuid>")]
 fn get_game(games: State<Games>, uuid: UUID) -> Option<Json<GameDescription>> {
-    let all = games.lock().unwrap();
-    println!("{:?}", all);
-    println!("{}", uuid.uuid.to_urn());
-
+    let all = games.lock().unwrap();    
     all.get(&uuid.uuid).map(|game| Json(game.description.clone()))
 }
 
@@ -89,32 +86,28 @@ fn with_game<F: FnOnce(&mut Game) -> ()>(games: State<Games>, id: UUID, action: 
     all.entry(id.uuid).and_modify(action);
 }
 
-#[put("/game/<uuid>/<name>", rank=3)]
-fn join_game(games: State<Games>, uuid: UUID, name: String) -> Option<Json<Player>> {
-    let mut player: Option<Json<Player>> = None;
+#[put("/game/<uuid>?<player>")]
+fn join_game(games: State<Games>, uuid: UUID, player: String) -> Option<Json<Player>> {
+    let mut new_player: Option<Json<Player>> = None;
     with_game(games, uuid, |game| {
-        player = if game.description.state == GameState::WAITING {
-            Some(Json(game.join_new_player(name)))
+        new_player = if game.description.state == GameState::WAITING {
+            Some(Json(game.join_new_player(player)))
         } else {
             None
         }
     });
-    player
+    new_player
 }
 
 // TODO auth
-#[put("/game/<uuid>/<name>", format = "json", data = "<update>", rank=2)]
-fn ready_player(games: State<Games>, uuid: UUID, name: String, update: Json<PlayerUpdate>) -> Option<Json<Player>> {
-    let mut player: Option<Player> = None;
-    with_game(games, uuid, |game| {
-        if game.description.state == GameState::WAITING {
-            player = game.update_player(&name, &update)
-        }
-    });
-    player.map(|p| Json(p))
+#[put("/game/<uuid>/start")]
+fn start_game(games: State<Games>, uuid: UUID) -> Option<Json<GameDescription>> {
+    let mut all = games.lock().unwrap();
+    all.entry(uuid.uuid).and_modify(|game| {game.start_game()});
+    all.get(&uuid.uuid).map(|game| Json(game.description.clone()))    
 }
 
-#[get("/game/<uuid>/<name>", rank=2)]
+#[get("/game/<uuid>/<name>")]
 fn get_player(games: State<Games>, uuid: UUID, name: String) -> Option<Json<Player>> {
     games.lock().unwrap().get(&uuid.uuid).map(|game| {
         game.players.iter().find(|p| p.name == name).map(|p| Json(p.clone()))
@@ -164,8 +157,7 @@ fn rocket() -> Result<rocket::Rocket, Error> {
         .manage(Meta::generate())
         .manage(Mutex::new(HashMap::<Uuid, Game>::new()))
         .mount("/", routes![meta, roll, new_game, get_game, join_game,
-                            get_player, ready_player, get_tile])
-//        .mount("/", catch_all_options_routes())
+                            get_player, start_game, get_tile])
         .attach(cors)
         .register(catchers![not_found]))
 }

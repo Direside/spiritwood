@@ -28,50 +28,18 @@ impl Game {
         }
     }
 
-    fn fresh_description(&self) -> GameDescription {
-        GameDescription {
-            state: if self.players.iter().all(|p| p.state == PlayerState::READY) {
-                GameState::PLAYING
-            } else {
-                GameState::WAITING
-            }, ..self.description.clone()
-        }
-    }
-
     pub fn join_new_player(&mut self, name: String) -> Player {
         let player = Player::new(self.players.len(), name);
         self.players.push(player.clone());
-        self.description.players = self.players.len();
+        self.description.players.push(player.name.clone());
         player
     }
 
-    pub fn player_ready(&mut self, name: String) -> Option<Player> {
-        let result = self.players.iter_mut().find(|p| {
-            p.name == name
-        }).map(|mut p| {
-            p.state = PlayerState::READY;
-            p.clone()
-        });
-        self.description = self.fresh_description();
-
-        result
-    }
-
-    // TODO Result
-    pub fn update_player(&mut self, name: &str, update: &PlayerUpdate) -> Option<Player> {
-        if name != update.name {
-            return None;
+    pub fn start_game(&mut self) {
+        self.description = GameDescription {
+            state: GameState::PLAYING,
+            ..self.description.clone()
         }
-
-        let result = self.players.iter_mut().find(|p| {
-            p.name == name
-        }).map(|mut p| {
-            p.state = update.state.clone();
-            p.clone()
-        });
-        self.description = self.fresh_description();
-
-        result
     }
 
     // TODO: move to turn
