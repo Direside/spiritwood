@@ -107,14 +107,14 @@ fn start_game(games: State<Games>, uuid: UUID) -> Option<Json<GameDescription>> 
     all.get(&uuid.uuid).map(|game| Json(game.description.clone()))    
 }
 
-#[get("/game/<uuid>/<name>")]
+#[get("/game/<uuid>/<name>", rank=2)]
 fn get_player(games: State<Games>, uuid: UUID, name: String) -> Option<Json<Player>> {
     games.lock().unwrap().get(&uuid.uuid).map(|game| {
         game.players.iter().find(|p| p.name == name).map(|p| Json(p.clone()))
     }).flatten()
 }
 
-#[get("/game/<uuid>/tile", rank=1)]
+#[get("/game/<uuid>/tile")]
 fn get_tile(games: State<Games>, uuid: UUID) -> Option<Json<Tile>> {
     let mut tile: Option<Tile> = None;
     with_game(games, uuid, |game| {
