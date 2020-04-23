@@ -124,13 +124,12 @@ fn get_next_tile(games: State<Games>, uuid: UUID) -> Option<Json<Tile>> {
 }
 
 #[get("/game/<uuid>/tiles/<x>/<y>")]
-fn get_tile(games: State<Games>, uuid: UUID, x: i8, y: i8) -> Option<Option<Json<Tile>>> {
+fn get_tile(games: State<Games>, uuid: UUID, x: i8, y: i8) -> Option<Json<Option<Tile>>> {
     let mut tile: Option<Option<Tile>> = None;
     with_game(games, uuid, |game| {
         tile = Some(game.get_tile(x, y));
     });
-    // TODO(toby): This always results in a 404 if the tile is missing. Should be 200 with some result as long as the game ID is valid.
-    tile.map(|t| t.map(|u| Json(u)))
+    tile.map(|t| Json(t))
 }
 
 #[put("/game/<uuid>/tiles/<x>/<y>", data = "<tile>")]
