@@ -3,13 +3,16 @@ use rand::thread_rng;
 use rand::Rng;
 use rand::seq::SliceRandom;
 
+use std::collections::HashMap;
+
 // complete record of the game that's stored on the server
 #[derive(Debug)]
 pub struct Game {
     pub description: GameDescription,
     pub players: Vec<Player>,
     pub turns: Vec<Turn>,
-    pub tileset: Vec<Tile>
+    pub tileset: Vec<Tile>,
+    tilemap: TileMap,
 }
 
 impl Game {
@@ -24,7 +27,8 @@ impl Game {
             description: GameDescription::default(),
             players: vec![],
             turns: vec![],
-            tileset: tiles // TODO: tileset
+            tileset: tiles, // TODO: tileset
+            tilemap: TileMap::new(),
         }
     }
 
@@ -47,6 +51,14 @@ impl Game {
         self.tileset.pop()
     }
 //    fn turn(&mut self) -> Turn {}
+
+    pub fn get_tile(&self, x: i8, y: i8) -> Option<Tile> {
+        self.tilemap.get_tile(x, y)
+    }
+
+    pub fn set_tile(&mut self, x: i8, y: i8, tile: Tile) {
+        self.tilemap.set_tile(x, y, tile);
+    }
 }
 
 // impl Default for everything
@@ -140,4 +152,52 @@ impl Character {
 #[derive(Debug)]
 pub struct Card {
     // TODO
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+struct TilePosition {
+    x: i8,
+    y: i8,
+}
+
+#[derive(Debug)]
+pub struct TileMap {
+    tiles: HashMap::<TilePosition, Tile>,
+}
+
+impl TileMap {
+    pub fn new() -> Self {
+        Self {
+            tiles: HashMap::<TilePosition, Tile>::new(),
+        }
+    }
+
+    pub fn get_tile(&self, x: i8, y: i8) -> Option<Tile> {
+        let pos = TilePosition { x, y };
+        self.tiles.get(&pos).map(|tile| tile.clone())
+
+    }
+
+    pub fn set_tile(&mut self, x: i8, y: i8, tile: Tile) {
+        let pos = TilePosition { x, y };
+        self.tiles.insert(pos, tile);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_tile_map() {
+        let tileset = Tile::load_tiles();
+
+        let mut tile_map = TileMap::new();
+
+        assert_eq!(tile_map.get_tile(5, 8), None);
+
+        tile_map.set_tile(5, 8, tileset[1].clone());
+
+        assert_eq!(tile_map.get_tile(5, 8), Some(tileset[1].clone()));
+    }
 }
