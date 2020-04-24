@@ -11,7 +11,8 @@ pub struct Game {
     pub description: GameDescription,
     pub players: Vec<Player>,
     pub turns: Vec<Turn>,
-    pub tileset: Vec<Tile>,
+    tile_stack: Vec<u32>,
+    tile_repo: TileRepository,
     tilemap: TileMap,
 }
 
@@ -19,15 +20,17 @@ impl Game {
     pub fn create() -> Game {
         let tileset = Tile::load_tiles();
         let mut rng = thread_rng();
-        let tiles: Vec<Tile> = (1..20).map(|_| {
-            tileset[rng.gen_range(1, tileset.len())].clone()
+        let tile_repo = TileRepository::new(&tileset);
+        let tile_stack: Vec<u32> = (1..20).map(|_| {
+            tileset[rng.gen_range(1, tileset.len())].id
         }).collect();
 
         Game {
             description: GameDescription::default(),
             players: vec![],
             turns: vec![],
-            tileset: tiles, // TODO: tileset
+            tile_stack: tile_stack,
+            tile_repo: tile_repo,
             tilemap: TileMap::new(),
         }
     }
@@ -48,16 +51,21 @@ impl Game {
 
     // TODO: move to turn
     pub fn pop_tile(&mut self) -> Option<Tile> {
-        self.tileset.pop()
+        self.tile_stack.pop().map(|tile_id| {
+            match self.tile_repo.get(tile_id) {
+                Some(tile) => tile,
+                None => panic!("Tile does not exist: {}", tile_id),
+            }
+        })
     }
 //    fn turn(&mut self) -> Turn {}
 
     pub fn get_tile(&self, x: i8, y: i8) -> Option<Tile> {
-        self.tilemap.get_tile(x, y)
+        self.tilemap.get_tile(x, y).and_then(|tile_id| self.tile_repo.get(tile_id))
     }
 
     pub fn set_tile(&mut self, x: i8, y: i8, tile: Tile) {
-        self.tilemap.set_tile(x, y, tile);
+        self.tilemap.set_tile(x, y, tile.id);
     }
 }
 
@@ -113,6 +121,27 @@ impl Tile {
 }
 
 #[derive(Debug)]
+struct TileRepository {
+    tile_index: HashMap<u32, Tile>,
+}
+
+impl TileRepository {
+    fn new(tileset: &Vec<Tile>) -> Self {
+        let mut index = HashMap::<u32, Tile>::new();
+        for tile in tileset {
+            index.insert(tile.id, tile.clone());
+        }
+        Self {
+            tile_index: index,
+        }
+    }
+
+    fn get(&self, tile_id: u32) -> Option<Tile> {
+        self.tile_index.get(&tile_id).map(|t| t.clone())
+    }
+}
+
+#[derive(Debug)]
 pub struct Character {
     id: u32,
     name: String,
@@ -162,31 +191,52 @@ struct TilePosition {
 
 #[derive(Debug)]
 pub struct TileMap {
-    tiles: HashMap::<TilePosition, Tile>,
+    tiles: HashMap::<TilePosition, u32>,
 }
 
 impl TileMap {
     pub fn new() -> Self {
         Self {
-            tiles: HashMap::<TilePosition, Tile>::new(),
+            tiles: HashMap::<TilePosition, u32>::new(),
         }
     }
 
-    pub fn get_tile(&self, x: i8, y: i8) -> Option<Tile> {
+    pub fn get_tile(&self, x: i8, y: i8) -> Option<u32> {
         let pos = TilePosition { x, y };
         self.tiles.get(&pos).map(|tile| tile.clone())
 
     }
 
-    pub fn set_tile(&mut self, x: i8, y: i8, tile: Tile) {
+    pub fn set_tile(&mut self, x: i8, y: i8, tile_id: u32) {
         let pos = TilePosition { x, y };
-        self.tiles.insert(pos, tile);
+        self.tiles.insert(pos, tile_id);
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_pop_tile() {
+        let mut game = Game::create();
+
+        let tile = game.pop_tile();
+        if tile == None {
+            panic!("No tile was returned.");
+        }
+    }
+
+    #[test]
+    fn test_tile_repo() {
+        let tileset = Tile::load_tiles();
+        let test_tile = tileset[1].clone();
+
+        let repo = TileRepository::new(&tileset);
+
+        assert_eq!(repo.get(test_tile.id), Some(test_tile));
+        assert_eq!(repo.get(42), None);
+    }
 
     #[test]
     fn test_tile_map() {
@@ -196,8 +246,8 @@ mod tests {
 
         assert_eq!(tile_map.get_tile(5, 8), None);
 
-        tile_map.set_tile(5, 8, tileset[1].clone());
+        tile_map.set_tile(5, 8, tileset[1].id);
 
-        assert_eq!(tile_map.get_tile(5, 8), Some(tileset[1].clone()));
+        assert_eq!(tile_map.get_tile(5, 8), Some(tileset[1].id));
     }
 }
