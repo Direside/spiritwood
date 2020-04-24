@@ -115,12 +115,29 @@ fn get_player(games: State<Games>, uuid: UUID, name: String) -> Option<Json<Play
 }
 
 #[get("/game/<uuid>/tile")]
-fn get_tile(games: State<Games>, uuid: UUID) -> Option<Json<Tile>> {
+fn get_next_tile(games: State<Games>, uuid: UUID) -> Option<Json<Tile>> {
     let mut tile: Option<Tile> = None;
     with_game(games, uuid, |game| {
         tile = game.pop_tile()
     });
     tile.map(|t| Json(t))
+}
+
+#[get("/game/<uuid>/tiles/<x>/<y>")]
+fn get_tile(games: State<Games>, uuid: UUID, x: i8, y: i8) -> Option<Json<Option<Tile>>> {
+    let mut tile: Option<Option<Tile>> = None;
+    with_game(games, uuid, |game| {
+        tile = Some(game.get_tile(x, y));
+    });
+    tile.map(|t| Json(t))
+}
+
+#[put("/game/<uuid>/tiles/<x>/<y>", data = "<tile>")]
+fn place_tile(games: State<Games>, uuid: UUID, x: i8, y: i8, tile: Json<Tile>) -> Option<Json<Tile>> {
+    with_game(games, uuid, |game| {
+        game.set_tile(x, y, tile.clone());
+    });
+    Some(tile)
 }
 
 struct UUID {
@@ -157,7 +174,7 @@ fn rocket() -> Result<rocket::Rocket, Error> {
         .manage(Meta::generate())
         .manage(Mutex::new(HashMap::<Uuid, Game>::new()))
         .mount("/", routes![meta, roll, new_game, get_game, join_game,
-                            get_player, start_game, get_tile])
+                            get_player, start_game, get_next_tile, get_tile, place_tile])
         .attach(cors)
         .register(catchers![not_found]))
 }

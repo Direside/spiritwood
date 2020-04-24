@@ -5,16 +5,35 @@ set -e
 SVR=${SVR-https://ecs.eddsteel.com}
 CRL="curl -s"
 
+echo "Create a game"
 id=$($CRL -X POST $SVR/game | jq -r .id)
+echo "$id"
 
 $CRL $SVR/game/$id | jq .
 
-$CRL -X PUT $SVR/game/$id?player=alice
-$CRL -X PUT $SVR/game/$id?player=bob
-$CRL -X PUT $SVR/game/$id?player=charles
+echo "Join the game"
+$CRL -X PUT $SVR/game/$id?player=alice | jq .
+$CRL -X PUT $SVR/game/$id?player=bob | jq .
+$CRL -X PUT $SVR/game/$id?player=charles | jq .
 
+echo "Check who's in the game"
 $CRL $SVR/game/$id | jq .
 
-$CRL -X PUT $SVR/game/$id/start
+echo "Start the game"
+$CRL -X PUT $SVR/game/$id/start | jq .
 
+echo "Check the game state"
 $CRL $SVR/game/$id | jq .
+
+echo "Get a tile"
+TILE=$($CRL $SVR/game/$id/tile)
+echo "$TILE" | jq .
+
+echo "Check for missing map tile"
+$CRL $SVR/game/$id/tiles/3/5 | jq .
+
+echo "Place a tile on the map"
+$CRL -X PUT $SVR/game/$id/tiles/3/5 --data "$($CRL $SVR/game/$id/tile | jq .)" | jq .
+
+echo "Check the tile was placed"
+$CRL $SVR/game/$id/tiles/3/5 | jq .
