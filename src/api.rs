@@ -10,19 +10,16 @@ pub enum GameState { WAITING, PLAYING, FINISHED }
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum PlayerState { WAITING, READY, ACTIVE }
 
+
 // Players send these to the server, which responds with Turns
 // all should have time and signature
-trait Move {}
-
-struct ReadyToStart{ name: String }
-struct PlaceTile{}
-struct DrawCard{}
-struct RollDice{}
-
-impl Move for ReadyToStart {}
-impl Move for PlaceTile {}
-impl Move for DrawCard {}
-impl Move for RollDice {}
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub enum Move {
+    ReadyToStart{ name: String },
+    PlaceTile {},
+    DrawCard {},
+    RollDice {},
+}
 
 #[derive(Clone, Debug, Serialize)]
 pub struct GameDescription {

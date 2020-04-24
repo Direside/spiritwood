@@ -1,4 +1,4 @@
-use crate::api::{Etag, Href, Key, GameDescription, Player, GameState, PlayerState, PlayerUpdate, Tile};
+use crate::api::{Etag, Href, Key, GameDescription, Player, Move, GameState, PlayerState, PlayerUpdate, Tile};
 use rand::thread_rng;
 use rand::Rng;
 use rand::seq::SliceRandom;
@@ -67,6 +67,16 @@ impl Game {
     pub fn set_tile(&mut self, x: i8, y: i8, tile: Tile) {
         self.tilemap.set_tile(x, y, tile.id);
     }
+
+    pub fn apply(&mut self, action: Move) {
+        // TODO: Actually execute the moves
+        match action {
+            Move::ReadyToStart { name } => panic!("Move: ReadyToStart {}", name),
+            Move::RollDice {} => panic!("Move: RollDice"),
+            Move::DrawCard {} => panic!("Move: DrawCard"),
+            Move::PlaceTile {} => panic!("Move: PlaceTile"),
+        }
+    }
 }
 
 // impl Default for everything
@@ -83,11 +93,6 @@ pub struct Turn {
     etag: Etag,
     href: Href,
 }
-
-#[derive(Debug)]
-pub struct Move {
-}
-
 
 #[derive(Debug)]
 pub struct Decks {
