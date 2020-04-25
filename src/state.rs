@@ -9,8 +9,8 @@ use std::collections::HashMap;
 #[derive(Debug)]
 pub struct Game {
     pub description: GameDescription,
-    pub players: Vec<Player>,
-    pub turns: Vec<Turn>,
+    players: Vec<Player>,
+    turns: Vec<Turn>,
     tile_stack: Vec<u32>,
     tile_repo: TileRepository,
     tilemap: TileMap,
@@ -59,6 +59,10 @@ impl Game {
         })
     }
 //    fn turn(&mut self) -> Turn {}
+
+    pub fn get_player(&self, name: &str) -> Option<Player> {
+        self.players.iter().find(|p| p.name == name).map(|p| p.clone())
+    }
 
     pub fn get_tile(&self, x: i8, y: i8) -> Option<Tile> {
         self.tilemap.get_tile(x, y).and_then(|tile_id| self.tile_repo.get(tile_id))

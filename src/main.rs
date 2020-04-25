@@ -110,7 +110,7 @@ fn start_game(games: State<Games>, uuid: UUID) -> Option<Json<GameDescription>> 
 #[get("/game/<uuid>/<name>", rank=2)]
 fn get_player(games: State<Games>, uuid: UUID, name: String) -> Option<Json<Player>> {
     games.lock().unwrap().get(&uuid.uuid).map(|game| {
-        game.players.iter().find(|p| p.name == name).map(|p| Json(p.clone()))
+        game.get_player(&name).map(|p| Json(p))
     }).flatten()
 }
 
