@@ -5,10 +5,15 @@ use rand::seq::SliceRandom;
 
 use std::collections::HashMap;
 
+use uuid::Uuid;
+
 // complete record of the game that's stored on the server
 #[derive(Debug)]
 pub struct Game {
-    description: GameDescription,
+    id: Uuid,
+    etag: Uuid,
+    state: GameState,
+    turn: u32,
     players: Vec<Player>,
     turns: Vec<Turn>,
     tile_stack: Vec<u32>,
@@ -18,6 +23,8 @@ pub struct Game {
 
 impl Game {
     pub fn create() -> Game {
+        let id = Uuid::new_v4();
+        let etag = Uuid::new_v4();
         let tileset = Tile::load_tiles();
         let mut rng = thread_rng();
         let tile_repo = TileRepository::new(&tileset);
@@ -26,7 +33,10 @@ impl Game {
         }).collect();
 
         Game {
-            description: GameDescription::default(),
+            id: id,
+            etag: etag,
+            state: GameState::WAITING,
+            turn: 0,
             players: vec![],
             turns: vec![],
             tile_stack: tile_stack,
@@ -36,25 +46,33 @@ impl Game {
     }
 
     pub fn players_can_join(&self) -> bool {
-        self.description.state == GameState::WAITING
+        self.state == GameState::WAITING
     }
 
     pub fn get_description(&self) -> GameDescription {
-        self.description.clone()
+        let mut players = vec![];
+        for p in &self.players {
+            players.push(p.name.clone());
+        }
+
+        GameDescription {
+            id: self.id,
+            state: self.state,
+            href: format!("/game/{}", self.id),
+            players: players,
+            turn: self.turn,
+            current: self.etag, // TODO: Mutate
+        }
     }
 
     pub fn join_new_player(&mut self, name: String) -> Player {
         let player = Player::new(self.players.len(), name);
         self.players.push(player.clone());
-        self.description.players.push(player.name.clone());
         player
     }
 
     pub fn start_game(&mut self) {
-        self.description = GameDescription {
-            state: GameState::PLAYING,
-            ..self.description.clone()
-        }
+        self.state = GameState::PLAYING;
     }
 
     // TODO: move to turn

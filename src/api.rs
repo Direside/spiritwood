@@ -4,10 +4,10 @@ pub type Etag = Uuid;
 pub type Key = Uuid;
 pub type Href = String;
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum GameState { WAITING, PLAYING, FINISHED }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum PlayerState { WAITING, READY, ACTIVE }
 
 
@@ -29,21 +29,6 @@ pub struct GameDescription {
     pub players: Vec<String>,
     pub turn: u32,
     pub current: Etag,
-}
-
-impl Default for GameDescription {
-    fn default() -> GameDescription {
-        let id = Uuid::new_v4();
-        let etag = Uuid::new_v4();
-        GameDescription {
-            id: id,
-            state: GameState::WAITING,
-            href: format!("/game/{}", id),
-            players: vec![],
-            turn: 0,
-            current: etag
-        }
-    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
