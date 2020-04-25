@@ -19,7 +19,7 @@ use std::sync::Mutex;
 use std::collections::HashMap;
 
 use crate::state::Game;
-use crate::api::{GameDescription, GameState, Player, PlayerUpdate, Tile};
+use crate::api::{Move, GameDescription, GameState, Player, PlayerUpdate, Tile};
 
 mod api;
 mod dice;
@@ -140,6 +140,24 @@ fn place_tile(games: State<Games>, uuid: UUID, x: i8, y: i8, tile: Json<Tile>) -
     Some(tile)
 }
 
+#[get("/game/<uuid>/moves")]
+fn get_moves(games: State<Games>, uuid: UUID) -> Option<Json<Vec<Move>>> {
+    Some(Json(vec![
+        Move::ReadyToStart { name: String::from("Alice") },
+        Move::DrawCard {},
+        Move::PlaceTile {},
+        Move::RollDice {},
+    ]))
+}
+
+#[put("/game/<uuid>/move", data = "<action>")]
+fn play_move(games: State<Games>, uuid: UUID, action: Json<Move>) -> Option<Json<u32>> {
+    with_game(games, uuid, |game| {
+        game.apply(action.clone());
+    });
+    Some(Json(0))
+}
+
 struct UUID {
     uuid: Uuid
 }
@@ -174,7 +192,7 @@ fn rocket() -> Result<rocket::Rocket, Error> {
         .manage(Meta::generate())
         .manage(Mutex::new(HashMap::<Uuid, Game>::new()))
         .mount("/", routes![meta, roll, new_game, get_game, join_game,
-                            get_player, start_game, get_next_tile, get_tile, place_tile])
+                            get_player, start_game, get_next_tile, get_tile, place_tile, get_moves, play_move])
         .attach(cors)
         .register(catchers![not_found]))
 }
