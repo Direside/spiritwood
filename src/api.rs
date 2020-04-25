@@ -63,3 +63,10 @@ pub struct Tile {
     pub image: String,
     pub symbol: char,
 }
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct PlacedTile {
+    pub x: i8,
+    pub y: i8,
+    pub tile: Tile,
+}

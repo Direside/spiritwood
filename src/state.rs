@@ -1,4 +1,4 @@
-use crate::api::{Etag, Href, Key, GameDescription, Player, Move, GameState, PlayerState, PlayerUpdate, Tile};
+use crate::api::{Etag, Href, Key, GameDescription, Player, Move, GameState, PlacedTile, PlayerState, PlayerUpdate, Tile};
 use rand::thread_rng;
 use rand::Rng;
 use rand::seq::SliceRandom;
@@ -98,8 +98,30 @@ impl Game {
         self.players.iter().find(|p| p.name == name).map(|p| p.clone())
     }
 
-    pub fn get_tile(&self, x: i8, y: i8) -> Option<Tile> {
-        self.tilemap.get_tile(x, y).and_then(|tile_id| self.tile_repo.get(tile_id))
+    pub fn board_space_open(&self, x: i8, y: i8) -> bool {
+        self.tilemap.get_tile(x, y).is_none()
+    }
+
+    pub fn get_tiles(&self, x: i8, y: i8, radius: u8) -> Vec<PlacedTile> {
+        if radius > 5 {
+            panic!("Cannot request more than 121 tiles (r=5).")
+        }
+
+        let mut result = vec![];
+        for i in (x - radius as i8)..(x + radius as i8) {
+            for j in (y - radius as i8)..(y as i8 + radius as i8) {
+                match self.tilemap.get_tile(i, j).and_then(|tile_id| self.tile_repo.get(tile_id)) {
+                    Some(tile) => result.push(PlacedTile {
+                        x: i,
+                        y: j,
+                        tile: tile,
+                    }),
+                    None => {},
+                }
+            }
+        }
+
+        result
     }
 
     pub fn apply(&mut self, action: Move) {

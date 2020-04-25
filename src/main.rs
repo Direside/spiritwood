@@ -18,7 +18,7 @@ use std::sync::Mutex;
 use uuid::Uuid;
 
 use crate::state::Game;
-use crate::api::{Move, GameDescription, Player, Tile};
+use crate::api::{Move, GameDescription, Player, PlacedTile, Tile};
 
 mod api;
 mod dice;
@@ -121,10 +121,14 @@ fn get_next_tile(games: State<Games>, uuid: UUID) -> Option<Json<Tile>> {
     tile.map(|t| Json(t))
 }
 
-#[get("/game/<uuid>/tiles/<x>/<y>")]
-fn get_tile(games: State<Games>, uuid: UUID, x: i8, y: i8) -> Option<Json<Option<Tile>>> {
+#[get("/game/<uuid>/tiles?<x>&<y>&<radius>")]
+fn get_tile(games: State<Games>, uuid: UUID, x: i8, y: i8, radius: Option<u8>) -> Option<Json<Vec<PlacedTile>>> {
     let tile = with_game(games, uuid, None, |game| {
-        Some(game.get_tile(x, y))
+        let radius = match radius {
+            Some(r) => r,
+            None => 5,
+        };
+        Some(game.get_tiles(x, y, radius))
     });
     tile.map(|t| Json(t))
 }
@@ -132,7 +136,7 @@ fn get_tile(games: State<Games>, uuid: UUID, x: i8, y: i8) -> Option<Json<Option
 #[put("/game/<uuid>/tiles/<x>/<y>", data = "<tile>")]
 fn place_tile(games: State<Games>, uuid: UUID, x: i8, y: i8, tile: Json<Tile>) -> Result<Json<Tile>, Conflict<JsonValue>> {
     let existed = with_game(games, uuid, false, |game| {
-        if game.get_tile(x, y).is_none() {
+        if game.board_space_open(x, y) {
             game.apply(Move::PlaceTile { x, y, tile: tile.clone() });
             false
         } else {
