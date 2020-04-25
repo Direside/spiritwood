@@ -69,7 +69,7 @@ fn roll() -> JsonValue {
 #[post("/game")]
 fn new_game(games: State<Games>) -> Json<GameDescription> {
     let game = Game::create();
-    let description = game.description.clone();
+    let description = game.get_description();
     games.lock().unwrap().insert(description.id, game);
     Json(description)
 }
@@ -77,7 +77,7 @@ fn new_game(games: State<Games>) -> Json<GameDescription> {
 #[get("/game/<uuid>")]
 fn get_game(games: State<Games>, uuid: UUID) -> Option<Json<GameDescription>> {
     let all = games.lock().unwrap();
-    all.get(&uuid.uuid).map(|game| Json(game.description.clone()))
+    all.get(&uuid.uuid).map(|game| Json(game.get_description()))
 }
 
 fn with_game<F: FnOnce(&mut Game) -> ()>(games: State<Games>, id: UUID, action: F)
@@ -90,7 +90,7 @@ fn with_game<F: FnOnce(&mut Game) -> ()>(games: State<Games>, id: UUID, action: 
 fn join_game(games: State<Games>, uuid: UUID, player: String) -> Option<Json<Player>> {
     let mut new_player: Option<Json<Player>> = None;
     with_game(games, uuid, |game| {
-        new_player = if game.description.state == GameState::WAITING {
+        new_player = if game.players_can_join() {
             Some(Json(game.join_new_player(player)))
         } else {
             None
@@ -104,7 +104,7 @@ fn join_game(games: State<Games>, uuid: UUID, player: String) -> Option<Json<Pla
 fn start_game(games: State<Games>, uuid: UUID) -> Option<Json<GameDescription>> {
     let mut all = games.lock().unwrap();
     all.entry(uuid.uuid).and_modify(|game| {game.start_game()});
-    all.get(&uuid.uuid).map(|game| Json(game.description.clone()))
+    all.get(&uuid.uuid).map(|game| Json(game.get_description()))
 }
 
 #[get("/game/<uuid>/<name>", rank=2)]

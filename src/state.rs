@@ -8,7 +8,7 @@ use std::collections::HashMap;
 // complete record of the game that's stored on the server
 #[derive(Debug)]
 pub struct Game {
-    pub description: GameDescription,
+    description: GameDescription,
     players: Vec<Player>,
     turns: Vec<Turn>,
     tile_stack: Vec<u32>,
@@ -33,6 +33,14 @@ impl Game {
             tile_repo: tile_repo,
             tilemap: TileMap::new(),
         }
+    }
+
+    pub fn players_can_join(&self) -> bool {
+        self.description.state == GameState::WAITING
+    }
+
+    pub fn get_description(&self) -> GameDescription {
+        self.description.clone()
     }
 
     pub fn join_new_player(&mut self, name: String) -> Player {

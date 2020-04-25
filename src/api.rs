@@ -15,7 +15,7 @@ pub enum PlayerState { WAITING, READY, ACTIVE }
 // all should have time and signature
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum Move {
-    ReadyToStart{ name: String },
+    ReadyToStart { name: String },
     PlaceTile {},
     DrawCard {},
     RollDice {},
