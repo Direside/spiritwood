@@ -38,5 +38,8 @@ $CRL -X PUT $SVR/game/$id/tiles/3/5 --data "$($CRL $SVR/game/$id/tile | jq .)" |
 echo "Check the tile was placed"
 $CRL $SVR/game/$id/tiles/3/5 | jq .
 
+echo "Place a tile on a spot that's not empty'"
+$CRL -X PUT $SVR/game/$id/tiles/3/5 --data "$($CRL $SVR/game/$id/tile | jq .)" | jq .
+
 echo "End turn"
 $CRL -X PUT $SVR/game/$id/move --data '{"EndTurn": {}}' | jq .

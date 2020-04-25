@@ -4,22 +4,21 @@
 #[macro_use] extern crate rocket_contrib;
 #[macro_use] extern crate serde_derive;
 
-use uuid::Uuid;
 use rocket::State;
 use rocket::http::Method;
+use rocket::http::RawStr;
+use rocket::request::FromParam;
+use rocket::response::status::Conflict;
 use rocket_contrib::json::{Json, JsonValue};
-use rocket_cors;
 use rocket_cors::catch_all_options_routes;
 use rocket_cors::{AllowedHeaders, AllowedOrigins, Error};
-
-use rocket::request::FromParam;
-use rocket::http::RawStr;
-
-use std::sync::Mutex;
+use rocket_cors;
 use std::collections::HashMap;
+use std::sync::Mutex;
+use uuid::Uuid;
 
 use crate::state::Game;
-use crate::api::{Move, GameDescription, GameState, Player, PlayerUpdate, Tile};
+use crate::api::{Move, GameDescription, Player, Tile};
 
 mod api;
 mod dice;
@@ -80,17 +79,17 @@ fn get_game(games: State<Games>, uuid: UUID) -> Option<Json<GameDescription>> {
     all.get(&uuid.uuid).map(|game| Json(game.get_description()))
 }
 
-fn with_game<F: FnOnce(&mut Game) -> ()>(games: State<Games>, id: UUID, action: F)
-{
+fn with_game<A, F: FnOnce(&mut Game) -> A>(games: State<Games>, id: UUID, default: A, action: F) -> A {
+    let mut result: A = default;
     let mut all = games.lock().unwrap();
-    all.entry(id.uuid).and_modify(action);
+    all.entry(id.uuid).and_modify(|g| result = action(g));
+    result
 }
 
 #[put("/game/<uuid>?<player>")]
 fn join_game(games: State<Games>, uuid: UUID, player: String) -> Option<Json<Player>> {
-    let mut new_player: Option<Json<Player>> = None;
-    with_game(games, uuid, |game| {
-        new_player = if game.players_can_join() {
+    let new_player = with_game(games, uuid, None, |game| {
+        if game.players_can_join() {
             Some(Json(game.join_new_player(player)))
         } else {
             None
@@ -116,28 +115,35 @@ fn get_player(games: State<Games>, uuid: UUID, name: String) -> Option<Json<Play
 
 #[get("/game/<uuid>/tile")]
 fn get_next_tile(games: State<Games>, uuid: UUID) -> Option<Json<Tile>> {
-    let mut tile: Option<Tile> = None;
-    with_game(games, uuid, |game| {
-        tile = game.pop_tile()
+    let tile = with_game(games, uuid, None, |game| {
+        game.pop_tile()
     });
     tile.map(|t| Json(t))
 }
 
 #[get("/game/<uuid>/tiles/<x>/<y>")]
 fn get_tile(games: State<Games>, uuid: UUID, x: i8, y: i8) -> Option<Json<Option<Tile>>> {
-    let mut tile: Option<Option<Tile>> = None;
-    with_game(games, uuid, |game| {
-        tile = Some(game.get_tile(x, y));
+    let tile = with_game(games, uuid, None, |game| {
+        Some(game.get_tile(x, y))
     });
     tile.map(|t| Json(t))
 }
 
 #[put("/game/<uuid>/tiles/<x>/<y>", data = "<tile>")]
-fn place_tile(games: State<Games>, uuid: UUID, x: i8, y: i8, tile: Json<Tile>) -> Option<Json<Tile>> {
-    with_game(games, uuid, |game| {
-        game.set_tile(x, y, tile.clone());
+fn place_tile(games: State<Games>, uuid: UUID, x: i8, y: i8, tile: Json<Tile>) -> Result<Json<Tile>, Conflict<JsonValue>> {    
+    let existed = with_game(games, uuid, false, |game| {
+        if game.get_tile(x, y).is_none() {
+            game.set_tile(x, y, tile.clone());
+            false
+        } else {
+            true
+        }
     });
-    Some(tile)
+    if existed {
+        Err(conflict(&"A tile has already been placed here.".to_string()))
+    } else {
+        Ok(tile)
+    }
 }
 
 #[get("/game/<uuid>/moves")]
@@ -152,11 +158,10 @@ fn get_moves(games: State<Games>, uuid: UUID) -> Option<Json<Vec<Move>>> {
 }
 
 #[put("/game/<uuid>/move", data = "<action>")]
-fn play_move(games: State<Games>, uuid: UUID, action: Json<Move>) -> Option<Json<GameDescription>> {
-    let mut desc = None;
-    with_game(games, uuid, |game| {
+fn play_move(games: State<Games>, uuid: UUID, action: Json<Move>) -> Option<Json<GameDescription>> {    
+    let desc = with_game(games, uuid, None, |game| {
         game.apply(action.clone());
-        desc = Some(game.get_description());
+        Some(game.get_description())
     });
     desc.map(|d| Json(d))
 }
@@ -180,6 +185,10 @@ fn not_found() -> JsonValue {
         "status": 404,
         "message": "Not Found."
     })
+}
+
+fn conflict(message: &String) -> Conflict<JsonValue> {
+    Conflict(Some(json!({"status": 409, "message": *message})))
 }
 
 fn rocket() -> Result<rocket::Rocket, Error> {
