@@ -147,15 +147,18 @@ fn get_moves(games: State<Games>, uuid: UUID) -> Option<Json<Vec<Move>>> {
         Move::DrawCard {},
         Move::PlaceTile {},
         Move::RollDice {},
+        Move::EndTurn {},
     ]))
 }
 
 #[put("/game/<uuid>/move", data = "<action>")]
-fn play_move(games: State<Games>, uuid: UUID, action: Json<Move>) -> Option<Json<u32>> {
+fn play_move(games: State<Games>, uuid: UUID, action: Json<Move>) -> Option<Json<GameDescription>> {
+    let mut desc = None;
     with_game(games, uuid, |game| {
         game.apply(action.clone());
+        desc = Some(game.get_description());
     });
-    Some(Json(0))
+    desc.map(|d| Json(d))
 }
 
 struct UUID {

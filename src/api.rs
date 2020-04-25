@@ -19,6 +19,7 @@ pub enum Move {
     PlaceTile {},
     DrawCard {},
     RollDice {},
+    EndTurn {},
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -28,6 +29,7 @@ pub struct GameDescription {
     pub href: Href,
     pub players: Vec<String>,
     pub turn: u32,
+    pub current_player: Option<String>,
     pub current: Etag,
 }
 

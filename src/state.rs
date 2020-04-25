@@ -15,6 +15,7 @@ pub struct Game {
     state: GameState,
     turn: u32,
     players: Vec<Player>,
+    current_player: usize, // Corresponds to index in players array.
     turns: Vec<Turn>,
     tile_stack: Vec<u32>,
     tile_repo: TileRepository,
@@ -38,6 +39,7 @@ impl Game {
             state: GameState::WAITING,
             turn: 0,
             players: vec![],
+            current_player: 0,
             turns: vec![],
             tile_stack: tile_stack,
             tile_repo: tile_repo,
@@ -55,12 +57,18 @@ impl Game {
             players.push(p.name.clone());
         }
 
+        let mut current_player = None;
+        if self.state == GameState::PLAYING {
+            current_player = Some(String::from(&players[self.current_player]));
+        }
+
         GameDescription {
             id: self.id,
             state: self.state,
             href: format!("/game/{}", self.id),
             players: players,
             turn: self.turn,
+            current_player: current_player,
             current: self.etag, // TODO: Mutate
         }
     }
@@ -105,7 +113,17 @@ impl Game {
             Move::RollDice {} => panic!("Move: RollDice"),
             Move::DrawCard {} => panic!("Move: DrawCard"),
             Move::PlaceTile {} => panic!("Move: PlaceTile"),
+            Move::EndTurn {} => self.end_turn(),
         }
+    }
+
+    fn end_turn(&mut self) {
+        let mut next_player = self.current_player + 1;
+        if next_player == self.players.len() {
+            next_player = 0;
+        }
+        self.current_player = next_player;
+        self.turn += 1;
     }
 }
 
@@ -251,6 +269,18 @@ impl TileMap {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_game_description() {
+        let mut game = Game::create();
+
+        let desc = game.get_description();
+        assert_eq!(desc.id, game.id);
+        assert_eq!(desc.state, GameState::WAITING);
+        assert_eq!(desc.players.len(), 0);
+        assert_eq!(desc.current_player, None);
+        assert_eq!(desc.turn, 0);
+    }
 
     #[test]
     fn test_pop_tile() {
