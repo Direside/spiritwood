@@ -102,19 +102,19 @@ impl Game {
         self.tilemap.get_tile(x, y).and_then(|tile_id| self.tile_repo.get(tile_id))
     }
 
-    pub fn set_tile(&mut self, x: i8, y: i8, tile: Tile) {
-        self.tilemap.set_tile(x, y, tile.id);
-    }
-
     pub fn apply(&mut self, action: Move) {
         // TODO: Actually execute the moves
         match action {
             Move::ReadyToStart { name } => panic!("Move: ReadyToStart {}", name),
             Move::RollDice {} => panic!("Move: RollDice"),
             Move::DrawCard {} => panic!("Move: DrawCard"),
-            Move::PlaceTile {} => panic!("Move: PlaceTile"),
+            Move::PlaceTile { x, y, tile } => self.set_tile(x, y, tile),
             Move::EndTurn {} => self.end_turn(),
         }
+    }
+
+    fn set_tile(&mut self, x: i8, y: i8, tile: Tile) {
+        self.tilemap.set_tile(x, y, tile.id);
     }
 
     fn end_turn(&mut self) {

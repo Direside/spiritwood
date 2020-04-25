@@ -16,10 +16,10 @@ pub enum PlayerState { WAITING, READY, ACTIVE }
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum Move {
     ReadyToStart { name: String },
-    PlaceTile {},
-    DrawCard {},
-    RollDice {},
-    EndTurn {},
+    PlaceTile { x: i8, y: i8, tile: Tile },
+    DrawCard,
+    RollDice,
+    EndTurn,
 }
 
 #[derive(Clone, Debug, Serialize)]

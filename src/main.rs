@@ -130,10 +130,10 @@ fn get_tile(games: State<Games>, uuid: UUID, x: i8, y: i8) -> Option<Json<Option
 }
 
 #[put("/game/<uuid>/tiles/<x>/<y>", data = "<tile>")]
-fn place_tile(games: State<Games>, uuid: UUID, x: i8, y: i8, tile: Json<Tile>) -> Result<Json<Tile>, Conflict<JsonValue>> {    
+fn place_tile(games: State<Games>, uuid: UUID, x: i8, y: i8, tile: Json<Tile>) -> Result<Json<Tile>, Conflict<JsonValue>> {
     let existed = with_game(games, uuid, false, |game| {
         if game.get_tile(x, y).is_none() {
-            game.set_tile(x, y, tile.clone());
+            game.apply(Move::PlaceTile { x, y, tile: tile.clone() });
             false
         } else {
             true
@@ -146,21 +146,10 @@ fn place_tile(games: State<Games>, uuid: UUID, x: i8, y: i8, tile: Json<Tile>) -
     }
 }
 
-#[get("/game/<uuid>/moves")]
-fn get_moves(games: State<Games>, uuid: UUID) -> Option<Json<Vec<Move>>> {
-    Some(Json(vec![
-        Move::ReadyToStart { name: String::from("Alice") },
-        Move::DrawCard {},
-        Move::PlaceTile {},
-        Move::RollDice {},
-        Move::EndTurn {},
-    ]))
-}
-
-#[put("/game/<uuid>/move", data = "<action>")]
-fn play_move(games: State<Games>, uuid: UUID, action: Json<Move>) -> Option<Json<GameDescription>> {    
+#[put("/game/<uuid>/endturn")]
+fn end_turn(games: State<Games>, uuid: UUID) -> Option<Json<GameDescription>> {
     let desc = with_game(games, uuid, None, |game| {
-        game.apply(action.clone());
+        game.apply(Move::EndTurn);
         Some(game.get_description())
     });
     desc.map(|d| Json(d))
@@ -204,7 +193,7 @@ fn rocket() -> Result<rocket::Rocket, Error> {
         .manage(Meta::generate())
         .manage(Mutex::new(HashMap::<Uuid, Game>::new()))
         .mount("/", routes![meta, roll, new_game, get_game, join_game,
-                            get_player, start_game, get_next_tile, get_tile, place_tile, get_moves, play_move])
+                            get_player, start_game, get_next_tile, get_tile, place_tile, end_turn])
         .attach(cors)
         .register(catchers![not_found]))
 }
