@@ -4,19 +4,18 @@
 #[macro_use] extern crate rocket_contrib;
 #[macro_use] extern crate serde_derive;
 
-use uuid::Uuid;
 use rocket::State;
 use rocket::http::Method;
+use rocket::http::RawStr;
+use rocket::request::FromParam;
+use rocket::response::status::Conflict;
 use rocket_contrib::json::{Json, JsonValue};
-use rocket_cors;
 use rocket_cors::catch_all_options_routes;
 use rocket_cors::{AllowedHeaders, AllowedOrigins, Error};
-
-use rocket::request::FromParam;
-use rocket::http::RawStr;
-
-use std::sync::Mutex;
+use rocket_cors;
 use std::collections::HashMap;
+use std::sync::Mutex;
+use uuid::Uuid;
 
 use crate::state::Game;
 use crate::api::{Move, GameDescription, GameState, Player, PlayerUpdate, Tile};
@@ -133,11 +132,20 @@ fn get_tile(games: State<Games>, uuid: UUID, x: i8, y: i8) -> Option<Json<Option
 }
 
 #[put("/game/<uuid>/tiles/<x>/<y>", data = "<tile>")]
-fn place_tile(games: State<Games>, uuid: UUID, x: i8, y: i8, tile: Json<Tile>) -> Option<Json<Tile>> {
+fn place_tile(games: State<Games>, uuid: UUID, x: i8, y: i8, tile: Json<Tile>) -> Result<Json<Tile>, Conflict<JsonValue>> {
+    let mut existed = false;
     with_game(games, uuid, |game| {
-        game.set_tile(x, y, tile.clone());
+        if (game.get_tile(x, y).is_none()) {
+            game.set_tile(x, y, tile.clone());
+        } else {
+            existed = true;
+        }
     });
-    Some(tile)
+    if existed {
+        Err(Conflict(Some(json!({"status": 409, "message": "Tile already exists."}))))
+    } else {
+        Ok(tile)
+    }
 }
 
 #[get("/game/<uuid>/moves")]
