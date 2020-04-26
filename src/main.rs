@@ -5,10 +5,9 @@
 #[macro_use] extern crate serde_derive;
 
 use rocket::State;
-use rocket::http::{ContentType, Status};
+
 use rocket::http::{Method, RawStr};
-use rocket::request::{FromParam, Request};
-use rocket::response::{self, Response, Responder};
+use rocket::request::FromParam;
 use rocket_contrib::json::{Json, JsonValue};
 use rocket_cors::{self, AllowedHeaders, AllowedOrigins, Error};
 use std::collections::HashMap;
@@ -17,9 +16,11 @@ use uuid::Uuid;
 
 use crate::state::Game;
 use crate::api::{Move, GameDescription, Player, PlacedTile, Tile};
+use crate::fail::{FailResponse, not_found, conflict, bad_request};
 
 mod api;
 mod dice;
+mod fail;
 mod state;
 
 #[derive(Serialize, Deserialize)]
@@ -29,52 +30,7 @@ struct Meta {
     commit: String
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-struct FailResponse {
-    status: u16,
-    message: String
-}
-
 type Result<A> = ::std::result::Result<A, FailResponse>;
-
-impl FailResponse {
-    fn fail(status: u16, message: &str) -> FailResponse {
-        FailResponse {
-            status: status,
-            message: message.to_string()
-        }
-    }
-
-    fn http_status(&self) -> Status {
-        match self.status {
-            200 => Status::Ok,
-            404 => Status::NotFound,
-            409 => Status::Conflict,
-            _ => Status::InternalServerError
-        }
-    }
-    
-    fn not_found(message: &str) -> FailResponse {
-        FailResponse::fail(404, message)
-    }
-
-    fn conflict(message: &str) -> FailResponse {
-        FailResponse::fail(409, message)
-    }
-
-    fn bad_request(message: &str) -> FailResponse {
-        FailResponse::fail(400, message)
-    }
-}
-
-impl<'r> Responder<'r> for FailResponse {
-    fn respond_to(self, req: &Request) -> response::Result<'r> {
-        Response::build_from(Json(&self).respond_to(&req).unwrap())
-            .header(ContentType::JSON)
-            .status(self.http_status().clone())
-            .ok()
-    }
-}
 
 const PKG_NAME: &str = env!("CARGO_PKG_NAME");
 const PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -125,7 +81,7 @@ fn get_game(games: State<Games>, uuid: UUID) -> Option<Json<GameDescription>> {
 }
 
 fn with_game<A, F: FnOnce(&mut Game) -> Result<A>> (games: State<Games>, id: UUID, action: F) -> Result<A> {
-    let mut result = Err(FailResponse::not_found("Game not found"));
+    let mut result = Err(not_found("Game not found"));
     let mut all = games.lock().unwrap();
     all.entry(id.uuid).and_modify(|g| result = action(g));
     result
@@ -137,7 +93,7 @@ fn join_game(games: State<Games>, uuid: UUID, player: String) -> Result<Json<Pla
         if game.players_can_join() {
             Ok(Json(game.join_new_player(player)))
         } else {
-            Err(FailResponse::bad_request("Game already started"))
+            Err(bad_request("Game already started"))
         }
     })
 }
@@ -154,14 +110,14 @@ fn start_game(games: State<Games>, uuid: UUID) -> Result<Json<GameDescription>> 
 #[get("/game/<uuid>/<name>", rank=2)]
 fn get_player(games: State<Games>, uuid: UUID, name: String) -> Result<Json<Player>> {
     with_game(games, uuid, |game| {
-        game.get_player(&name).map(|p| Json(p)).ok_or(FailResponse::not_found("Player not found."))
+        game.get_player(&name).map(|p| Json(p)).ok_or(not_found("Player not found."))
     })
 }
 
 #[get("/game/<uuid>/tile")]
 fn get_next_tile(games: State<Games>, uuid: UUID) -> Result<Json<Tile>> {
     with_game(games, uuid, |game| {
-        game.pop_tile().map(|p| Json(p)).ok_or(FailResponse::not_found("No more tiles!"))
+        game.pop_tile().map(|p| Json(p)).ok_or(not_found("No more tiles!"))
     })
 }
 
@@ -183,7 +139,7 @@ fn place_tile(games: State<Games>, uuid: UUID, x: i8, y: i8, tile: Json<Tile>) -
             game.apply(Move::PlaceTile { x, y, tile: tile.clone() });
             Ok(Json(tile.clone()))
         } else {
-            Err(FailResponse::conflict(&"A tile has already been placed here."))
+            Err(conflict(&"A tile has already been placed here."))
         }
     })
 }
@@ -210,7 +166,7 @@ impl<'a> FromParam<'a> for UUID {
 }
 
 #[catch(404)]
-fn not_found() -> JsonValue {
+fn not_found_catcher() -> JsonValue {
     json!({"status": 404, "message": "Not Found."})
 }
 
@@ -230,7 +186,7 @@ fn rocket() -> ::std::result::Result<rocket::Rocket, Error> {
         .mount("/", routes![meta, roll, new_game, get_game, join_game,
                             get_player, start_game, get_next_tile, get_tile, place_tile, end_turn])
         .attach(cors)
-        .register(catchers![not_found]))
+        .register(catchers![not_found_catcher]))
 }
 
 fn main() -> ::std::result::Result<(), Error> {
