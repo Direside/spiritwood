@@ -81,7 +81,7 @@ fn get_game(games: State<Games>, uuid: UUID) -> Option<Json<GameDescription>> {
 }
 
 fn with_game<A, F: FnOnce(&mut Game) -> Result<A>> (games: State<Games>, id: UUID, action: F) -> Result<A> {
-    let mut result = Err(not_found("Game not found"));
+    let mut result = Err(not_found("Game not found."));
     let mut all = games.lock().unwrap();
     all.entry(id.uuid).and_modify(|g| result = action(g));
     result
@@ -93,7 +93,7 @@ fn join_game(games: State<Games>, uuid: UUID, player: String) -> Result<Json<Pla
         if game.players_can_join() {
             Ok(Json(game.join_new_player(player)))
         } else {
-            Err(bad_request("Game already started"))
+            Err(bad_request("Game already started."))
         }
     })
 }
