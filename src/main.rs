@@ -5,14 +5,12 @@
 #[macro_use] extern crate serde_derive;
 
 use rocket::State;
-use rocket::http::Method;
-use rocket::http::RawStr;
-use rocket::request::FromParam;
-use rocket::response::status::Conflict;
+use rocket::http::{ContentType, Status};
+use rocket::http::{Method, RawStr};
+use rocket::request::{FromParam, Request};
+use rocket::response::{self, Response, Responder};
 use rocket_contrib::json::{Json, JsonValue};
-use rocket_cors::catch_all_options_routes;
-use rocket_cors::{AllowedHeaders, AllowedOrigins, Error};
-use rocket_cors;
+use rocket_cors::{self, AllowedHeaders, AllowedOrigins, Error};
 use std::collections::HashMap;
 use std::sync::Mutex;
 use uuid::Uuid;
@@ -29,6 +27,53 @@ struct Meta {
     name: String,
     version: String,
     commit: String
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct FailResponse {
+    status: u16,
+    message: String
+}
+
+type Result<A> = ::std::result::Result<A, FailResponse>;
+
+impl FailResponse {
+    fn fail(status: u16, message: &str) -> FailResponse {
+        FailResponse {
+            status: status,
+            message: message.to_string()
+        }
+    }
+
+    fn http_status(&self) -> Status {
+        match self.status {
+            200 => Status::Ok,
+            404 => Status::NotFound,
+            409 => Status::Conflict,
+            _ => Status::InternalServerError
+        }
+    }
+    
+    fn not_found(message: &str) -> FailResponse {
+        FailResponse::fail(404, message)
+    }
+
+    fn conflict(message: &str) -> FailResponse {
+        FailResponse::fail(409, message)
+    }
+
+    fn bad_request(message: &str) -> FailResponse {
+        FailResponse::fail(400, message)
+    }
+}
+
+impl<'r> Responder<'r> for FailResponse {
+    fn respond_to(self, req: &Request) -> response::Result<'r> {
+        Response::build_from(Json(&self).respond_to(&req).unwrap())
+            .header(ContentType::JSON)
+            .status(self.http_status().clone())
+            .ok()
+    }
 }
 
 const PKG_NAME: &str = env!("CARGO_PKG_NAME");
@@ -79,84 +124,76 @@ fn get_game(games: State<Games>, uuid: UUID) -> Option<Json<GameDescription>> {
     all.get(&uuid.uuid).map(|game| Json(game.get_description()))
 }
 
-fn with_game<A, F: FnOnce(&mut Game) -> A>(games: State<Games>, id: UUID, default: A, action: F) -> A {
-    let mut result: A = default;
+fn with_game<A, F: FnOnce(&mut Game) -> Result<A>> (games: State<Games>, id: UUID, action: F) -> Result<A> {
+    let mut result = Err(FailResponse::not_found("Game not found"));
     let mut all = games.lock().unwrap();
     all.entry(id.uuid).and_modify(|g| result = action(g));
     result
 }
 
 #[put("/game/<uuid>?<player>")]
-fn join_game(games: State<Games>, uuid: UUID, player: String) -> Option<Json<Player>> {
-    let new_player = with_game(games, uuid, None, |game| {
+fn join_game(games: State<Games>, uuid: UUID, player: String) -> Result<Json<Player>> {
+    with_game(games, uuid, |game| {
         if game.players_can_join() {
-            Some(Json(game.join_new_player(player)))
+            Ok(Json(game.join_new_player(player)))
         } else {
-            None
+            Err(FailResponse::bad_request("Game already started"))
         }
-    });
-    new_player
+    })
 }
 
 // TODO auth
 #[put("/game/<uuid>/start")]
-fn start_game(games: State<Games>, uuid: UUID) -> Option<Json<GameDescription>> {
-    let mut all = games.lock().unwrap();
-    all.entry(uuid.uuid).and_modify(|game| {game.start_game()});
-    all.get(&uuid.uuid).map(|game| Json(game.get_description()))
+fn start_game(games: State<Games>, uuid: UUID) -> Result<Json<GameDescription>> {
+    with_game(games, uuid, |game| {
+        game.start_game();
+        Ok(Json(game.get_description()))
+    })
 }
 
 #[get("/game/<uuid>/<name>", rank=2)]
-fn get_player(games: State<Games>, uuid: UUID, name: String) -> Option<Json<Player>> {
-    games.lock().unwrap().get(&uuid.uuid).map(|game| {
-        game.get_player(&name).map(|p| Json(p))
-    }).flatten()
+fn get_player(games: State<Games>, uuid: UUID, name: String) -> Result<Json<Player>> {
+    with_game(games, uuid, |game| {
+        game.get_player(&name).map(|p| Json(p)).ok_or(FailResponse::not_found("Player not found."))
+    })
 }
 
 #[get("/game/<uuid>/tile")]
-fn get_next_tile(games: State<Games>, uuid: UUID) -> Option<Json<Tile>> {
-    let tile = with_game(games, uuid, None, |game| {
-        game.pop_tile()
-    });
-    tile.map(|t| Json(t))
+fn get_next_tile(games: State<Games>, uuid: UUID) -> Result<Json<Tile>> {
+    with_game(games, uuid, |game| {
+        game.pop_tile().map(|p| Json(p)).ok_or(FailResponse::not_found("No more tiles!"))
+    })
 }
 
 #[get("/game/<uuid>/tiles?<x>&<y>&<radius>")]
-fn get_tile(games: State<Games>, uuid: UUID, x: i8, y: i8, radius: Option<u8>) -> Option<Json<Vec<PlacedTile>>> {
-    let tile = with_game(games, uuid, None, |game| {
+fn get_tile(games: State<Games>, uuid: UUID, x: i8, y: i8, radius: Option<u8>) -> Result<Json<Vec<PlacedTile>>> {
+    with_game(games, uuid, |game| {
         let radius = match radius {
             Some(r) => r,
             None => 5,
         };
-        Some(game.get_tiles(x, y, radius))
-    });
-    tile.map(|t| Json(t))
+        Ok(Json(game.get_tiles(x, y, radius)))
+    })
 }
 
 #[put("/game/<uuid>/tiles/<x>/<y>", data = "<tile>")]
-fn place_tile(games: State<Games>, uuid: UUID, x: i8, y: i8, tile: Json<Tile>) -> Result<Json<Tile>, Conflict<JsonValue>> {
-    let existed = with_game(games, uuid, false, |game| {
+fn place_tile(games: State<Games>, uuid: UUID, x: i8, y: i8, tile: Json<Tile>) -> Result<Json<Tile>> {
+    with_game(games, uuid, |game| {
         if game.board_space_open(x, y) {
             game.apply(Move::PlaceTile { x, y, tile: tile.clone() });
-            false
+            Ok(Json(tile.clone()))
         } else {
-            true
+            Err(FailResponse::conflict(&"A tile has already been placed here."))
         }
-    });
-    if existed {
-        Err(conflict(&"A tile has already been placed here.".to_string()))
-    } else {
-        Ok(tile)
-    }
+    })
 }
 
 #[put("/game/<uuid>/endturn")]
-fn end_turn(games: State<Games>, uuid: UUID) -> Option<Json<GameDescription>> {
-    let desc = with_game(games, uuid, None, |game| {
+fn end_turn(games: State<Games>, uuid: UUID) -> Result<Json<GameDescription>> {
+    with_game(games, uuid, |game| {
         game.apply(Move::EndTurn);
-        Some(game.get_description())
-    });
-    desc.map(|d| Json(d))
+        Ok(Json(game.get_description()))
+    })
 }
 
 struct UUID {
@@ -167,24 +204,18 @@ impl<'a> FromParam<'a> for UUID {
     type Error = uuid::Error;
 
     #[inline(always)]
-    fn from_param(param: &'a RawStr) -> Result<UUID, Self::Error> {
+    fn from_param(param: &'a RawStr) -> ::std::result::Result<UUID, Self::Error> {
         Uuid::parse_str(param).map(|u| UUID { uuid: u })
     }
 }
 
 #[catch(404)]
 fn not_found() -> JsonValue {
-    json!({
-        "status": 404,
-        "message": "Not Found."
-    })
+    json!({"status": 404, "message": "Not Found."})
 }
 
-fn conflict(message: &String) -> Conflict<JsonValue> {
-    Conflict(Some(json!({"status": 409, "message": *message})))
-}
 
-fn rocket() -> Result<rocket::Rocket, Error> {
+fn rocket() -> ::std::result::Result<rocket::Rocket, Error> {
     let cors = rocket_cors::CorsOptions {
         allowed_origins: AllowedOrigins::all(),
         allowed_methods: vec![Method::Get, Method::Post, Method::Put, Method::Options].into_iter().map(From::from).collect(),
@@ -202,7 +233,7 @@ fn rocket() -> Result<rocket::Rocket, Error> {
         .register(catchers![not_found]))
 }
 
-fn main() -> Result<(), Error> {
+fn main() -> ::std::result::Result<(), Error> {
     rocket()?.launch();
     Ok(())
 }
