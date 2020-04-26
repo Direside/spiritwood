@@ -2,7 +2,8 @@
 
 set -e
 
-SVR=${SVR-https://ecs.eddsteel.com}
+#SVR=${SVR-https://ecs.eddsteel.com}
+SVR="${SVR-http://localhost:8000}"
 CRL="curl -s"
 
 echo "Create a game"
