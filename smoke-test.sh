@@ -34,13 +34,13 @@ echo "Check for missing map tile"
 $CRL "$SVR/game/$id/tiles?x=3&y=5" | jq .
 
 echo "Place a tile on the map"
-$CRL -X PUT $SVR/game/$id/tiles/3/5 --data "$($CRL $SVR/game/$id/tile | jq .)" | jq .
+$CRL -X PUT $SVR/game/$id/placetile --data "{\"x\": 3, \"y\": 5, \"tile\": $TILE}" | jq .
 
 echo "Check the tile was placed"
 $CRL "$SVR/game/$id/tiles?x=3&y=5" | jq .
 
 echo "Place a tile on a spot that's not empty"
-$CRL -X PUT $SVR/game/$id/tiles/3/5 --data "$($CRL $SVR/game/$id/tile | jq .)" | jq .
+$CRL -X PUT $SVR/game/$id/placetile --data "{\"x\": 3, \"y\": 5, \"tile\": $TILE}" | jq .
 
 echo "End turn"
 $CRL -X PUT $SVR/game/$id/endturn | jq .
