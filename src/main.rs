@@ -146,11 +146,6 @@ fn place_tile(games: State<Games>, uuid: UUID, body: Json<PlaceTileRequestBody>)
         game.apply(Move::PlaceTile { x: body.x, y: body.y, tile_id: body.tile })?;
         let tile = game.get_tile(body.x, body.y);
         Ok(Json(tile.unwrap()))
-        // match  {
-        //     Ok(()) => {
-        //     },
-        //     Err(GameplayError::IllegalMove(msg)) => Err(conflict(msg)),
-        // }
     })
 }
 
