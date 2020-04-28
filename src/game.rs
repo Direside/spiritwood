@@ -98,8 +98,8 @@ impl Game {
         self.players.iter().find(|p| p.name == name).map(|p| p.clone())
     }
 
-    pub fn board_space_open(&self, x: i8, y: i8) -> bool {
-        self.tilemap.get_tile(x, y).is_none()
+    pub fn get_tile(&self, x: i8, y: i8) -> Option<Tile> {
+      self.tilemap.get_tile(x, y).map(|id| self.tile_repo.get(id).unwrap())
     }
 
     pub fn get_tiles(&self, x: i8, y: i8, radius: u8) -> Vec<PlacedTile> {
@@ -130,13 +130,13 @@ impl Game {
             Move::ReadyToStart { name } => panic!("Move: ReadyToStart {}", name),
             Move::RollDice {} => panic!("Move: RollDice"),
             Move::DrawCard {} => panic!("Move: DrawCard"),
-            Move::PlaceTile { x, y, tile } => self.set_tile(x, y, tile),
+            Move::PlaceTile { x, y, tile_id } => self.set_tile(x, y, tile_id),
             Move::EndTurn {} => self.end_turn(),
         }
     }
 
-    fn set_tile(&mut self, x: i8, y: i8, tile: Tile) {
-        self.tilemap.set_tile(x, y, tile.id);
+    fn set_tile(&mut self, x: i8, y: i8, tile_id: u32) {
+        self.tilemap.set_tile(x, y, tile_id);
     }
 
     fn end_turn(&mut self) {

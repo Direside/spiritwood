@@ -133,12 +133,20 @@ fn get_tile(games: State<Games>, uuid: UUID, x: i8, y: i8, radius: Option<u8>) -
     })
 }
 
-#[put("/game/<uuid>/placetile", data = "<placement>")]
-fn place_tile(games: State<Games>, uuid: UUID, placement: Json<PlacedTile>) -> Result<Json<Tile>> {
+#[derive(Deserialize, Serialize)]
+struct PlaceTileRequestBody {
+    x: i8,
+    y: i8,
+    tile: u32, // Tile ID
+}
+
+#[put("/game/<uuid>/placetile", data = "<body>")]
+fn place_tile(games: State<Games>, uuid: UUID, body: Json<PlaceTileRequestBody>) -> Result<Json<Tile>> {
     with_game(games, uuid, |game| {
-        if game.board_space_open(placement.x, placement.y) {
-            game.apply(Move::PlaceTile { x: placement.x, y: placement.y, tile: placement.tile.clone() });
-            Ok(Json(placement.tile.clone()))
+        if game.get_tile(body.x, body.y).is_none() {
+            game.apply(Move::PlaceTile { x: body.x, y: body.y, tile_id: body.tile });
+            let tile = game.get_tile(body.x, body.y);
+            Ok(Json(tile.unwrap()))
         } else {
             Err(conflict(&"A tile has already been placed here."))
         }
