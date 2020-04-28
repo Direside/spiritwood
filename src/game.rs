@@ -81,6 +81,7 @@ impl Game {
 
     pub fn start_game(&mut self) {
         self.state = GameState::PLAYING;
+        self.turn = 1;
     }
 
     // TODO: move to turn
