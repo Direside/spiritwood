@@ -125,7 +125,7 @@ impl Game {
         result
     }
 
-    pub fn apply(&mut self, action: Move) {
+    pub fn apply(&mut self, action: Move) -> Result<(), GameplayError> {
         // TODO: Actually execute the moves
         match action {
             Move::ReadyToStart { name } => panic!("Move: ReadyToStart {}", name),
@@ -136,18 +136,30 @@ impl Game {
         }
     }
 
-    fn set_tile(&mut self, x: i8, y: i8, tile_id: u32) {
-        self.tilemap.set_tile(x, y, tile_id);
+    fn set_tile(&mut self, x: i8, y: i8, tile_id: u32) -> Result<(), GameplayError> {
+        match self.get_tile(x, y) {
+            Some(_) => Err(GameplayError::IllegalMove("A tile has already been placed here.")),
+            None => {
+                self.tilemap.set_tile(x, y, tile_id);
+                Ok(())
+            },
+        }
+
     }
 
-    fn end_turn(&mut self) {
+    fn end_turn(&mut self) -> Result<(), GameplayError> {
         let mut next_player = self.current_player + 1;
         if next_player == self.players.len() {
             next_player = 0;
         }
         self.current_player = next_player;
         self.turn += 1;
+        Ok(())
     }
+}
+
+pub enum GameplayError {
+  IllegalMove(&'static str),
 }
 
 #[derive(Debug)]

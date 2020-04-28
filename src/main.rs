@@ -14,7 +14,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use uuid::Uuid;
 
-use crate::game::Game;
+use crate::game::{Game, GameplayError};
 use crate::api::{Move, GameDescription, Player, PlacedTile, Tile};
 use crate::fail::{FailResponse, not_found, conflict, bad_request};
 
@@ -143,22 +143,31 @@ struct PlaceTileRequestBody {
 #[put("/game/<uuid>/placetile", data = "<body>")]
 fn place_tile(games: State<Games>, uuid: UUID, body: Json<PlaceTileRequestBody>) -> Result<Json<Tile>> {
     with_game(games, uuid, |game| {
-        if game.get_tile(body.x, body.y).is_none() {
-            game.apply(Move::PlaceTile { x: body.x, y: body.y, tile_id: body.tile });
-            let tile = game.get_tile(body.x, body.y);
-            Ok(Json(tile.unwrap()))
-        } else {
-            Err(conflict(&"A tile has already been placed here."))
-        }
+        game.apply(Move::PlaceTile { x: body.x, y: body.y, tile_id: body.tile })?;
+        let tile = game.get_tile(body.x, body.y);
+        Ok(Json(tile.unwrap()))
+        // match  {
+        //     Ok(()) => {
+        //     },
+        //     Err(GameplayError::IllegalMove(msg)) => Err(conflict(msg)),
+        // }
     })
 }
 
 #[put("/game/<uuid>/endturn")]
 fn end_turn(games: State<Games>, uuid: UUID) -> Result<Json<GameDescription>> {
     with_game(games, uuid, |game| {
-        game.apply(Move::EndTurn);
+        game.apply(Move::EndTurn)?;
         Ok(Json(game.get_description()))
     })
+}
+
+impl From<GameplayError> for FailResponse {
+    fn from(err: GameplayError) -> FailResponse {
+        match err {
+            GameplayError::IllegalMove(msg) => conflict(msg),
+        }
+    }
 }
 
 struct UUID {
