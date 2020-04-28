@@ -14,13 +14,14 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use uuid::Uuid;
 
-use crate::state::Game;
+use crate::game::Game;
 use crate::api::{Move, GameDescription, Player, PlacedTile, Tile};
 use crate::fail::{FailResponse, not_found, conflict, bad_request};
 
 mod api;
 mod dice;
 mod fail;
+mod game;
 mod state;
 
 #[derive(Serialize, Deserialize)]
