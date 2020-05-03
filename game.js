@@ -5,20 +5,24 @@ import { rollDice } from './dice.js';
 import { getCookie, setCookie, clearCookie } from './cookie.js'
 
 
-let menu = document.getElementById("menu");
-let ready = document.getElementById("ready");
-let main = document.getElementById("main");
-let board = document.getElementById("board");
-let credits = document.getElementById("credits");
-let name = document.getElementById("playerName");
+const menu = document.getElementById("menu");
+const ready = document.getElementById("ready");
+const main = document.getElementById("main");
+const board = document.getElementById("board");
+const credits = document.getElementById("credits");
+const name = document.getElementById("playerName");
+const nextTileImage = document.getElementById("next-tile-image");
 
 let height = 10;
 let width = 15;
 let bits = "36px"
 
+const backend = "http://localhost:8000"
 
 if (!window.playerName) {
     changeName();
+} else {
+    name.innerText = getCookie("playerName")
 }
 
 function changeName() {
@@ -42,7 +46,6 @@ window.newGame = function newGame() {
         })
     })
         .then((response) => {
-            console.log(response)
             return response.json();
         })
         .then((data) => {
@@ -64,6 +67,10 @@ window.joinGame = function joinGame() {
     fetch(`http://localhost:8000/game/${window.gameID}?player=${window.playerName}`, {
         method: "PUT"
     }).then((data) => {
+        window.playerID = data.playerID
+        window.header = new Headers({
+            "Authorization": `Bearer ${data.playerToken}`
+        })
         window.readyScreen()
     })
 }
@@ -100,10 +107,17 @@ window.readyScreen = function readyScreen() {
     window.gettingPlayers = setInterval(window.updatePlayerList, 1000);
 }
 
+window.endTurn = function endTurn() {
+    this.fetch(`${backend}/game/${window.gameID}/moves/endturn`, {
+        headers: window.headers,
+        method: "PUT"
+    })
+}
+
 window.startGame = function startGame() {
     console.log(window.gettingPlayers)
     clearInterval(window.gettingPlayers);
-    fetch(`http://localhost:8000/game/${window.gameID}/start`, {
+    fetch(`${backend}/game/${window.gameID}/start`, {
         method: "PUT"
     }).then((r) => {
         return r.json();
@@ -111,6 +125,21 @@ window.startGame = function startGame() {
         main.classList.remove("hide");
         ready.classList.add("hide");
         menu.classList.add("hide");
+    })
+}
+
+window.getNextTile = function getNextTile() {
+    nextTileImage.innerHTML = "<img src='images/tiles/straight.png' height='80 width='80' />"
+}
+
+window.getBoardTiles = function getBoardTiles(radius) {
+    fetch(`${backend}/game/${window.gameID}/tiles?x=10&y=10`, {
+        headers: window.headers,
+        method: "GET"
+    }).then(r => {
+        return r.json()
+    }).then(data => {
+        console.log(data)
     })
 }
 

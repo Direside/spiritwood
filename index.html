@@ -3,32 +3,67 @@
 </head>
 
 <body>
-    <div id="wrap">
-        <h1>Spiritwood</h1>
-        <p>Hi, <span id="playerName"></span></p>
-        <div>DEBUG MODE: <span id="debugGameID"></span></div>
-        <div id="menu">
-            <ul>
-                <li><a onclick="newGame();">New Game</a></li>
-                <li><a onclick="joinGame();">Join Game</a></li>
-                <li><a onclick="credit();">Credits</a></li>
-                <li><a onclick="clearPlayName();">Change Name</a></li>
-            </ul>
+    <div class="grid-container">
+        <div class="top">
+            <h1>Spiritwood</h1>
         </div>
-        <div id="ready" class="hide">
-            <ul id="players">
-                Waiting for players...
-            </ul>
-            <a onclick="startGame();">Start!</a>
+        <div class="center">
+
+            <div id="menu">
+                <ul>
+                    <li><a onclick="newGame();">New Game</a></li>
+                    <li><a onclick="joinGame();">Join Game</a></li>
+                    <li><a onclick="credit();">Credits</a></li>
+                    <li><a onclick="clearPlayName();">Change Name</a></li>
+                </ul>
+            </div>
+            <div id="ready" class="hide">
+                <ul id="players">
+                    Waiting for players...
+                </ul>
+                <a onclick="startGame();">Start!</a>
+            </div>
+            <div id="credits" class="hide">
+                <h1>Credits</h1>
+                <h2>Programming</h2>
+                <p>Shane Gearon<br />James Hunter<br />Edd Steel</p>
+                <h2>Art</h2>
+                <p>Shane Gearon</p>
+                <h2>Testing</h2>
+                <p>Edd Steel</p>
+            </div>
+            <div id="main" class="hide">
+
+                <div id="board"></div>
+            </div>
+
         </div>
-        <div id="main" class="hide">
-            <div id="dice">
+        <div class="left" class="hide">
+            <div class="player-info side-item">
+                <p>Hi, <span id="playerName"></span></p>
+                <div>DEBUG MODE: <span id="debugGameID"></span></div>
+            </div>
+            <div id="dice" class="side-item">
                 <p>Dice</p>
-                <img id="dice-image" />
+                <img id="dice-image" /><br />
                 <button id="roll" onclick="roll('dice-image')">Roll</button>
             </div>
-            <div id="board"></div>
-            <div id="cards">
+            <div id="end-turn" class="side-item">
+                <p>Player's Turn</p>
+                <span id="players-turn">...</span><br />
+                <div id="next-tile-image" class="tile-image"></div>
+                1. <button id="get-tile" onclick="getNextTile()">Get Tile</button><br />
+                2. <button id="get-tile" onclick="getNextTile()" disabled="disabled">Move</button> and/or <button id="get-tile" onclick="getNextTile()" disabled="disabled">Search</button><br />
+                <img id="dice-image" /><br />
+                3.<button id="roll" onclick="roll('dice-image')" disabled="disabled">Attack Roll</button><br />
+                4. <button id="end" onclick="endTurn()">End Turn</button>
+            </div>
+        </div>
+        <div class="right">
+            <div id="hand">
+                <p>Tiles</p>
+            </div>
+            <div id="cards" class="side-item">
                 <p>Cards</p>
                 <div id="graveyard" class="monster-deck" onclick="draw(window.gy, window.gyDiscard, 'discard');">
                     <p>Graveyard</p>
@@ -41,19 +76,8 @@
                 </div>
                 <div id="discard" class="monster-deck empty"></div>
             </div>
-            <div id="hand">
-                <p>Tiles</p>
-            </div>
         </div>
-        <div id="credits" class="hide">
-            <h1>Credits</h1>
-            <h2>Programming</h2>
-            <p>Shane Gearon<br />James Hunter<br />Edd Steel</p>
-            <h2>Art</h2>
-            <p>Shane Gearon</p>
-            <h2>Testing</h2>
-            <p>Edd Steel</p>
-        </div>
+        <div class="bottom"></div>
     </div>
     <script src="game.js" type="module"></script>
 </body>
