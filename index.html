@@ -60,19 +60,23 @@
             </div>
         </div>
         <div class="right">
-            <div id="hand">
-                <p>Tiles</p>
-            </div>
             <div id="cards" class="side-item">
                 <p>Cards</p>
                 <div id="graveyard" class="monster-deck" onclick="draw(window.gy, window.gyDiscard, 'discard');">
-                    <p>Graveyard</p>
+                    <img src="/images/symbols/nature.png" />
+                    <p>Nature</p>
                 </div>
                 <div id="spiderweb" class="monster-deck" onclick="draw(window.web, window.webDiscard, 'discard');">
-                    <p>Spiders Web</p>
+                    <img src="/images/symbols/town.png" />
+                    <p>Town</p>
                 </div>
                 <div id="bones" class="monster-deck" onclick="draw(window.bone, window.boneDiscard, 'discard');">
-                    <p>Pile of Bones</p>
+                    <img src="/images/symbols/industrial.png" />
+                    <p>Industrial</p>
+                </div>
+                <div id="mystic" class="monster-deck" onclick="draw(window.bone, window.boneDiscard, 'discard');">
+                    <img src="/images/symbols/mystic.png" />
+                    <p>Mystical</p>
                 </div>
                 <div id="discard" class="monster-deck empty"></div>
             </div>

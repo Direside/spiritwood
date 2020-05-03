@@ -19,6 +19,14 @@ let bits = "36px"
 
 const backend = "http://localhost:8000"
 
+window.allTiles = [
+    "bear_cave_corner_symbol.png",
+    "cross.png",
+    "graveyard_straight_symbol.png",
+    "tee.png",
+    "straight.png"
+]
+
 if (!window.playerName) {
     changeName();
 } else {
@@ -129,7 +137,9 @@ window.startGame = function startGame() {
 }
 
 window.getNextTile = function getNextTile() {
-    nextTileImage.innerHTML = "<img src='images/tiles/straight.png' height='80 width='80' />"
+    let tiles = window.allTiles
+    let imagePath = tiles[Math.round(Math.random() * tiles.length)-1]
+    nextTileImage.innerHTML = `<img src='images/tiles/${imagePath}' height='80 width='80' />`
 }
 
 window.getBoardTiles = function getBoardTiles(radius) {

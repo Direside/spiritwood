@@ -84,7 +84,7 @@ h1, h2, p {
 
 .tile-image {
     height: 80px;
-    padding-bottom: llllllllllllllllllooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo00ooo00oooooooooooooooooooooooooooooooooooooooo0 5px67675-=678=-67345-=1`;
+    padding-bottom: 1px;
 }
 
 #cards {
@@ -104,6 +104,11 @@ h1, h2, p {
     font-size: 6px;
     vertical-align: middle;
     color: papayawhip;
+}
+
+.monster-deck img {
+    width: 50px;
+    padding: 5px;
 }
 
 .monster-deck.empty {
@@ -138,6 +143,10 @@ h1, h2, p {
 
 #bones {
     background-color: olive;
+}
+
+#mystic {
+    background-color: palevioletred;
 }
 
 .palette-art {
