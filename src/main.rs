@@ -4,25 +4,24 @@
 #[macro_use] extern crate rocket_contrib;
 #[macro_use] extern crate serde_derive;
 
-use uuid::Uuid;
 use rocket::State;
-use rocket::http::Method;
-use rocket_contrib::json::{Json, JsonValue};
-use rocket_cors;
-use rocket_cors::catch_all_options_routes;
-use rocket_cors::{AllowedHeaders, AllowedOrigins, Error};
 
+use rocket::http::{Method, RawStr};
 use rocket::request::FromParam;
-use rocket::http::RawStr;
-
-use std::sync::Mutex;
+use rocket_contrib::json::{Json, JsonValue};
+use rocket_cors::{self, AllowedHeaders, AllowedOrigins, Error};
 use std::collections::HashMap;
+use std::sync::Mutex;
+use uuid::Uuid;
 
-use crate::state::Game;
-use crate::api::{Move, GameDescription, GameState, Player, PlayerUpdate, Tile};
+use crate::game::{Game, GameplayError};
+use crate::api::{Move, GameDescription, Player, PlacedTile, Tile};
+use crate::fail::{FailResponse, not_found, conflict, bad_request};
 
 mod api;
 mod dice;
+mod fail;
+mod game;
 mod state;
 
 #[derive(Serialize, Deserialize)]
@@ -31,6 +30,8 @@ struct Meta {
     version: String,
     commit: String
 }
+
+type Result<A> = ::std::result::Result<A, FailResponse>;
 
 const PKG_NAME: &str = env!("CARGO_PKG_NAME");
 const PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -80,85 +81,88 @@ fn get_game(games: State<Games>, uuid: UUID) -> Option<Json<GameDescription>> {
     all.get(&uuid.uuid).map(|game| Json(game.get_description()))
 }
 
-fn with_game<F: FnOnce(&mut Game) -> ()>(games: State<Games>, id: UUID, action: F)
-{
+fn with_game<A, F: FnOnce(&mut Game) -> Result<A>> (games: State<Games>, id: UUID, action: F) -> Result<A> {
+    let mut result = Err(not_found("Game not found."));
     let mut all = games.lock().unwrap();
-    all.entry(id.uuid).and_modify(action);
+    all.entry(id.uuid).and_modify(|g| result = action(g));
+    result
 }
 
 #[put("/game/<uuid>?<player>")]
-fn join_game(games: State<Games>, uuid: UUID, player: String) -> Option<Json<Player>> {
-    let mut new_player: Option<Json<Player>> = None;
+fn join_game(games: State<Games>, uuid: UUID, player: String) -> Result<Json<Player>> {
     with_game(games, uuid, |game| {
-        new_player = if game.players_can_join() {
-            Some(Json(game.join_new_player(player)))
+        if game.players_can_join() {
+            Ok(Json(game.join_new_player(player)))
         } else {
-            None
+            Err(bad_request("Game already started."))
         }
-    });
-    new_player
+    })
 }
 
 // TODO auth
 #[put("/game/<uuid>/start")]
-fn start_game(games: State<Games>, uuid: UUID) -> Option<Json<GameDescription>> {
-    let mut all = games.lock().unwrap();
-    all.entry(uuid.uuid).and_modify(|game| {game.start_game()});
-    all.get(&uuid.uuid).map(|game| Json(game.get_description()))
+fn start_game(games: State<Games>, uuid: UUID) -> Result<Json<GameDescription>> {
+    with_game(games, uuid, |game| {
+        game.start_game();
+        Ok(Json(game.get_description()))
+    })
 }
 
 #[get("/game/<uuid>/<name>", rank=2)]
-fn get_player(games: State<Games>, uuid: UUID, name: String) -> Option<Json<Player>> {
-    games.lock().unwrap().get(&uuid.uuid).map(|game| {
-        game.get_player(&name).map(|p| Json(p))
-    }).flatten()
+fn get_player(games: State<Games>, uuid: UUID, name: String) -> Result<Json<Player>> {
+    with_game(games, uuid, |game| {
+        game.get_player(&name).map(|p| Json(p)).ok_or(not_found("Player not found."))
+    })
 }
 
 #[get("/game/<uuid>/tile")]
-fn get_next_tile(games: State<Games>, uuid: UUID) -> Option<Json<Tile>> {
-    let mut tile: Option<Tile> = None;
+fn get_next_tile(games: State<Games>, uuid: UUID) -> Result<Json<Tile>> {
     with_game(games, uuid, |game| {
-        tile = game.pop_tile()
-    });
-    tile.map(|t| Json(t))
+        game.pop_tile().map(|p| Json(p)).ok_or(not_found("No more tiles!"))
+    })
 }
 
-#[get("/game/<uuid>/tiles/<x>/<y>")]
-fn get_tile(games: State<Games>, uuid: UUID, x: i8, y: i8) -> Option<Json<Option<Tile>>> {
-    let mut tile: Option<Option<Tile>> = None;
+#[get("/game/<uuid>/tiles?<x>&<y>&<radius>")]
+fn get_tile(games: State<Games>, uuid: UUID, x: i8, y: i8, radius: Option<u8>) -> Result<Json<Vec<PlacedTile>>> {
     with_game(games, uuid, |game| {
-        tile = Some(game.get_tile(x, y));
-    });
-    tile.map(|t| Json(t))
+        let radius = match radius {
+            Some(r) => r,
+            None => 5,
+        };
+        Ok(Json(game.get_tiles(x, y, radius)))
+    })
 }
 
-#[put("/game/<uuid>/tiles/<x>/<y>", data = "<tile>")]
-fn place_tile(games: State<Games>, uuid: UUID, x: i8, y: i8, tile: Json<Tile>) -> Option<Json<Tile>> {
-    with_game(games, uuid, |game| {
-        game.set_tile(x, y, tile.clone());
-    });
-    Some(tile)
+#[derive(Deserialize, Serialize)]
+struct PlaceTileRequestBody {
+    x: i8,
+    y: i8,
+    tile: u32, // Tile ID
 }
 
-#[get("/game/<uuid>/moves")]
-fn get_moves(games: State<Games>, uuid: UUID) -> Option<Json<Vec<Move>>> {
-    Some(Json(vec![
-        Move::ReadyToStart { name: String::from("Alice") },
-        Move::DrawCard {},
-        Move::PlaceTile {},
-        Move::RollDice {},
-        Move::EndTurn {},
-    ]))
+#[put("/game/<uuid>/placetile", data = "<body>")]
+fn place_tile(games: State<Games>, uuid: UUID, body: Json<PlaceTileRequestBody>) -> Result<Json<Tile>> {
+    with_game(games, uuid, |game| {
+        game.apply(Move::PlaceTile { x: body.x, y: body.y, tile_id: body.tile })?;
+        let tile = game.get_tile(body.x, body.y);
+        Ok(Json(tile.unwrap()))
+    })
 }
 
-#[put("/game/<uuid>/move", data = "<action>")]
-fn play_move(games: State<Games>, uuid: UUID, action: Json<Move>) -> Option<Json<GameDescription>> {
-    let mut desc = None;
+#[put("/game/<uuid>/endturn")]
+fn end_turn(games: State<Games>, uuid: UUID) -> Result<Json<GameDescription>> {
     with_game(games, uuid, |game| {
-        game.apply(action.clone());
-        desc = Some(game.get_description());
-    });
-    desc.map(|d| Json(d))
+        game.apply(Move::EndTurn)?;
+        Ok(Json(game.get_description()))
+    })
+}
+
+impl From<GameplayError> for FailResponse {
+    fn from(err: GameplayError) -> FailResponse {
+        match err {
+            GameplayError::IllegalMove(msg) => conflict(msg),
+        }
+    }
 }
 
 struct UUID {
@@ -169,20 +173,18 @@ impl<'a> FromParam<'a> for UUID {
     type Error = uuid::Error;
 
     #[inline(always)]
-    fn from_param(param: &'a RawStr) -> Result<UUID, Self::Error> {
+    fn from_param(param: &'a RawStr) -> ::std::result::Result<UUID, Self::Error> {
         Uuid::parse_str(param).map(|u| UUID { uuid: u })
     }
 }
 
 #[catch(404)]
-fn not_found() -> JsonValue {
-    json!({
-        "status": 404,
-        "message": "Not Found."
-    })
+fn not_found_catcher() -> JsonValue {
+    json!({"status": 404, "message": "Not Found."})
 }
 
-fn rocket() -> Result<rocket::Rocket, Error> {
+
+fn rocket() -> ::std::result::Result<rocket::Rocket, Error> {
     let cors = rocket_cors::CorsOptions {
         allowed_origins: AllowedOrigins::all(),
         allowed_methods: vec![Method::Get, Method::Post, Method::Put, Method::Options].into_iter().map(From::from).collect(),
@@ -195,12 +197,12 @@ fn rocket() -> Result<rocket::Rocket, Error> {
         .manage(Meta::generate())
         .manage(Mutex::new(HashMap::<Uuid, Game>::new()))
         .mount("/", routes![meta, roll, new_game, get_game, join_game,
-                            get_player, start_game, get_next_tile, get_tile, place_tile, get_moves, play_move])
+                            get_player, start_game, get_next_tile, get_tile, place_tile, end_turn])
         .attach(cors)
-        .register(catchers![not_found]))
+        .register(catchers![not_found_catcher]))
 }
 
-fn main() -> Result<(), Error> {
+fn main() -> ::std::result::Result<(), Error> {
     rocket()?.launch();
     Ok(())
 }

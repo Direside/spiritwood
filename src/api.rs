@@ -16,10 +16,10 @@ pub enum PlayerState { WAITING, READY, ACTIVE }
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum Move {
     ReadyToStart { name: String },
-    PlaceTile {},
-    DrawCard {},
-    RollDice {},
-    EndTurn {},
+    PlaceTile { x: i8, y: i8, tile_id: u32 },
+    DrawCard,
+    RollDice,
+    EndTurn,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -62,4 +62,11 @@ pub struct Tile {
     pub id: u32,
     pub image: String,
     pub symbol: char,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct PlacedTile {
+    pub x: i8,
+    pub y: i8,
+    pub tile: Tile,
 }
