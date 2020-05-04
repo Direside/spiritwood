@@ -1,9 +1,7 @@
-use crate::state::{Turn};
 use crate::api::{Etag, GameDescription, Player, Move, GameState, PlacedTile, Tile};
 use crate::state::{Biome, Board, Card};
 use rand::thread_rng;
 use rand::Rng;
-
 use std::collections::HashMap;
 
 use uuid::Uuid;
@@ -17,7 +15,6 @@ pub struct Game {
     turn: u32,
     players: Vec<Player>,
     current_player: usize, // Corresponds to index in players array.
-    turns: Vec<Turn>,
     tile_stack: Vec<u32>,
     tile_repo: TileRepository,
     tilemap: TileMap,
@@ -94,7 +91,6 @@ impl Game {
             }
         })
     }
-//    fn turn(&mut self) -> Turn {}
 
     pub fn get_player(&self, name: &str) -> Option<Player> {
         self.players.iter().find(|p| p.name == name).map(|p| p.clone())
@@ -149,10 +145,7 @@ impl Game {
     }
 
     fn end_turn(&mut self) -> Result<(), GameplayError> {
-        let mut next_player = self.current_player + 1;
-        if next_player == self.players.len() {
-            next_player = 0;
-        }
+        let next_player = (self.current_player + 1) % self.players.len();
         self.current_player = next_player;
         self.turn += 1;
         Ok(())
@@ -262,5 +255,24 @@ mod tests {
         tile_map.set_tile(5, 8, tileset[1].id);
 
         assert_eq!(tile_map.get_tile(5, 8), Some(tileset[1].id));
+    }
+
+    #[test]
+    fn turns() {
+        let mut game = Game::create();
+        game.join_new_player("alice".to_string());
+        game.join_new_player("bob".to_string());
+
+        assert_eq!(game.turn, 0);
+        assert_eq!(game.current_player, 0);
+        game.start_game();
+        assert_eq!(game.turn, 1);
+        assert_eq!(game.current_player, 0);
+        game.end_turn();
+        assert_eq!(game.turn, 2);
+        assert_eq!(game.current_player, 1);
+        game.end_turn();
+        assert_eq!(game.turn, 3);
+        assert_eq!(game.current_player, 0);
     }
 }
