@@ -67,6 +67,11 @@ fn roll() -> JsonValue {
     json!(dice::roll(1, 6))
 }
 
+#[options("/game")]
+fn new_game_preflight() -> Json<u8> {
+    Json(0)
+}
+
 #[post("/game")]
 fn new_game(games: State<Games>) -> Json<GameDescription> {
     let game = Game::create();
