@@ -10,6 +10,11 @@ pub enum GameState { WAITING, PLAYING, FINISHED }
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum PlayerState { WAITING, READY, ACTIVE }
 
+impl Default for GameState {
+    fn default() -> GameState {
+        GameState::WAITING
+    }
+}
 
 // Players send these to the server, which responds with Turns
 // all should have time and signature

@@ -19,6 +19,7 @@ use crate::api::{Move, GameDescription, Player, PlacedTile, Tile};
 use crate::fail::{FailResponse, not_found, conflict, bad_request};
 
 mod api;
+mod cards;
 mod dice;
 mod fail;
 mod game;

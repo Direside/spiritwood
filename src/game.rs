@@ -1,5 +1,6 @@
-use crate::api::{GameDescription, Player, Move, GameState, PlacedTile, Tile};
 use crate::state::{Turn};
+use crate::api::{Etag, GameDescription, Player, Move, GameState, PlacedTile, Tile};
+use crate::state::{Biome, Board, Card};
 use rand::thread_rng;
 use rand::Rng;
 
@@ -8,7 +9,7 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 // complete record of the game that's stored on the server
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Game {
     id: Uuid,
     etag: Uuid,
@@ -20,6 +21,8 @@ pub struct Game {
     tile_stack: Vec<u32>,
     tile_repo: TileRepository,
     tilemap: TileMap,
+    biomes: Vec<Biome>, // TODO: useful structure for these
+    discard: Vec<Card>
 }
 
 impl Game {
@@ -27,6 +30,7 @@ impl Game {
         let id = Uuid::new_v4();
         let etag = Uuid::new_v4();
         let tileset = Tile::load_tiles();
+        let biomes = Biome::load_biomes();
         let mut rng = thread_rng();
         let tile_repo = TileRepository::new(&tileset);
         let tile_stack: Vec<u32> = (1..20).map(|_| {
@@ -36,14 +40,11 @@ impl Game {
         Game {
             id: id,
             etag: etag,
-            state: GameState::WAITING,
-            turn: 0,
-            players: vec![],
-            current_player: 0,
-            turns: vec![],
             tile_stack: tile_stack,
             tile_repo: tile_repo,
             tilemap: TileMap::new(),
+            biomes: biomes,
+            ..Default::default()
         }
     }
 
@@ -162,7 +163,7 @@ pub enum GameplayError {
   IllegalMove(&'static str),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct TileMap {
     tiles: HashMap::<TilePosition, u32>,
 }
@@ -186,13 +187,13 @@ impl TileMap {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
 struct TilePosition {
     x: i8,
     y: i8,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct TileRepository {
     tile_index: HashMap<u32, Tile>,
 }

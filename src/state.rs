@@ -1,40 +1,36 @@
 use crate::api::{Etag, Href, Move, GameState, Tile};
+use crate::cards;
 
 
 // impl Default for everything
 
 // turn state, i.e. what's sent to FE
-#[derive(Debug)]
-pub struct Turn {
+#[derive(Clone, Debug)]
+pub struct Card {
     id: u32,
-    gamestate: GameState,
-    player: u16,
-    decks: Decks,
-    board: Board,
-    moves: Vec<Move>,
-    etag: Etag,
-    href: Href,
+    name: String,
+    effect: &'static str
 }
 
-#[derive(Debug)]
-pub struct Decks {
-    graveyard: Vec<Card>,
-    bones: Vec<Card>
+#[derive(Clone, Debug, Default)]
+pub struct Biome {
+    id: u32,
+    name: String,
+    deck: Vec<Card>
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Rotation { NONE, RIGHT, HALF, LEFT }
 
-#[derive(Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Board {
     // change this to be (Board, Change)?
     tiles: Vec<Vec<(Tile, Rotation)>>
 }
 
-
 impl Tile {
     fn new(id: u32, symbol: char, image: &'static str) -> Tile {
-        Tile {id: id, symbol: symbol, image: image.to_string()}
+        Self {id: id, symbol: symbol, image: image.to_string()}
     }
 
     // TODO DB
@@ -54,7 +50,7 @@ pub struct Character {
     description: String,
     skill: String,
     equipment: u16,
-    health: u16,
+    pub health: u16,
     speed: u16,
     attack: u16,
 }
@@ -84,7 +80,36 @@ impl Character {
     }
 }
 
-#[derive(Debug)]
-pub struct Card {
-    // TODO
+impl Card {
+    pub fn load_cards() -> Vec<Card> {
+        vec![
+            Card {
+                id: 0,
+                name: "Hot Dog".to_string(),
+                effect: "CARD_HOTDOG_0001"
+            }
+        ]
+    }
+}
+
+impl Biome {
+    fn new(id: u32, name: &'static str) -> Biome {
+        Self {
+            id: id,
+            name: name.to_string(),
+            deck: vec![]
+        }
+    }
+
+    pub fn load_biomes() -> Vec<Biome> {
+        let mut biomes = vec![
+            Self::new(0, "Nature"),
+            Self::new(1, "Town"),
+            Self::new(2, "Industrial"),
+            Self::new(3, "Mystical"),
+            Self::new(4, "None")
+        ];
+
+        biomes
+    }
 }
