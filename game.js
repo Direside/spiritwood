@@ -130,9 +130,7 @@ window.startGame = function startGame() {
     }).then((r) => {
         return r.json();
     }).then(data => {
-        main.classList.remove("hide");
-        ready.classList.add("hide");
-        menu.classList.add("hide");
+        enterGame();
     })
 }
 
@@ -142,15 +140,15 @@ window.getNextTile = function getNextTile() {
     nextTileImage.innerHTML = `<img src='images/tiles/${imagePath}' height='80 width='80' />`
 }
 
-window.getBoardTiles = function getBoardTiles(radius) {
-    fetch(`${backend}/game/${window.gameID}/tiles?x=10&y=10`, {
+window.getBoardTiles = async function getBoardTiles(x, y, radius) {
+    return await fetch(`${backend}/game/${window.gameID}/tiles?x=${x}&y=${y}&radius=${radius}`, {
         headers: window.headers,
         method: "GET"
     }).then(r => {
-        return r.json()
-    }).then(data => {
-        console.log(data)
-    })
+        const data = r.json();
+        console.log(data);
+        return data;
+    });
 }
 
 window.credit = function credit() {
@@ -277,23 +275,7 @@ board.style.setProperty("--bits", bits)
 const xs = Array.from({ length: width }, (_, i) => i)
 const ys = Array.from({ length: height }, (_, i) => i)
 
-const tiles = [
-    {
-        id: 1,
-        type: "+",
-        image: "images/tiles/cross.png"
-    },
-    {
-        id: 2,
-        type: "-",
-        image: "images/tiles/straight.png"
-    },
-    {
-        id: 3,
-        type: "T",
-        image: "images/tiles/tee.png"
-    }
-]
+let tiles = [];
 
 var current = ""
 
@@ -326,10 +308,75 @@ window.leave = function leave(event) {
     event.target.classList.remove("over")
 }
 
+const enterGame = () => {
+    main.classList.remove("hide");
+    ready.classList.add("hide");
+    menu.classList.add("hide");
+}
+
+const loadExistingGame = () => {
+    const gameID = decodeURIComponent(window.location.hash.substring(1));
+    if (gameID && gameID.length > 0) {
+        window.gameID = gameID;
+    }
+}
+
+const calcBoundingBox = (xs, ys) => {
+    let left = xs[0];
+    let right = xs[0];
+    let top = ys[0];
+    let bottom = ys[0];
+
+    for (const x of xs) {
+        if (x < left) {
+            left = x;
+        }
+        if (x > right) {
+            right = x;
+        }
+    }
+
+    for (const y of ys) {
+        if (y < top) {
+            top = y;
+        }
+        if (y > bottom) {
+            bottom = y;
+        }
+    }
+
+    return {
+        left,
+        right,
+        top,
+        bottom,
+    };
+}
+
+const fetchTiles = async () => {
+    const {left, right, top, bottom} = calcBoundingBox(xs, ys);
+    let diameter = right - left;
+    if (bottom - top > diameter) {
+        diameter = bottom - top;
+    }
+    const radius = diameter / 2;
+    const x = left + radius + (diameter % 2);
+    const y = top + radius + (diameter % 2);
+
+    const placedTiles = await window.getBoardTiles(x, y, radius);
+    for (const placedTile of placedTiles) {
+        if (!tiles[placedTile.x]) {
+            tiles[placedTile.x] = [];
+        }
+
+        tiles[placedTile.x][placedTile.y] = placedTile.tile;
+    }
+};
+
 const getTile = (x, y) => {
-    const url = (tiles[x] || [])[y]
-    if (url) {
-        return "background-image: url(" + url + ")"
+    const tile = (tiles[x] || [])[y]
+    if (tile) {
+        return "background-image: url(" + tile.image + ")"
     } else {
         return ""
     }
@@ -347,7 +394,17 @@ function paint() {
     board.innerHTML = grid;
 }
 
-paint()
+loadExistingGame();
+if (window.gameID) {
+    fetchTiles()
+        .then(() => {
+            paint();
+            enterGame();
+        });
+} else {
+    paint();
+}
+
 
 const palette = document.createElement("div")
 palette.classList.add("palette")

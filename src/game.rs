@@ -104,8 +104,8 @@ impl Game {
     }
 
     pub fn get_tiles(&self, x: i8, y: i8, radius: u8) -> Vec<PlacedTile> {
-        if radius > 5 {
-            panic!("Cannot request more than 121 tiles (r=5).")
+        if radius > 10 {
+            panic!("Cannot request more than 401 tiles (r=10).")
         }
 
         let mut result = vec![];
