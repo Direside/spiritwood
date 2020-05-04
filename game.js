@@ -135,9 +135,15 @@ window.startGame = function startGame() {
 }
 
 window.getNextTile = function getNextTile() {
-    let tiles = window.allTiles
-    let imagePath = tiles[Math.round(Math.random() * tiles.length)-1]
-    nextTileImage.innerHTML = `<img src='images/tiles/${imagePath}' height='80 width='80' />`
+    fetch(`${backend}/game/${window.gameID}/tile`, {
+        headers: window.headers,
+    })
+    .then(r => {
+        return r.json();
+    })
+    .then(data => {
+        nextTileImage.innerHTML = `<img src='${data.image}' height='80 width='80' />`;
+    });
 }
 
 window.getBoardTiles = async function getBoardTiles(x, y, radius) {
