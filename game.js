@@ -142,7 +142,7 @@ window.getNextTile = function getNextTile() {
         return r.json();
     })
     .then(data => {
-        nextTileImage.innerHTML = `<img src='${data.image}' height='80 width='80' />`;
+        nextTileImage.innerHTML = `<img src='${data.image}' ondragstart='dragStart(event, ${data.id})' height='80 width='80' />`;
     });
 }
 
@@ -154,6 +154,25 @@ window.getBoardTiles = async function getBoardTiles(x, y, radius) {
         const data = r.json();
         console.log(data);
         return data;
+    });
+}
+
+window.placeTile = async function placeTile(x, y, tileId) {
+    x = parseInt(x);
+    y = parseInt(y);
+    tileId = parseInt(tileId);
+
+    await fetch(`${backend}/game/${window.gameID}/placetile`, {
+        headers: {
+            ...window.headers,
+            'Content-Type': 'application/json',
+        },
+        method: "PUT",
+        body: JSON.stringify({
+            x,
+            y,
+            tile: tileId,
+        }),
     });
 }
 
@@ -285,19 +304,25 @@ let tiles = [];
 
 var current = ""
 
-window.dragStart = function dragStart(event) {
-    current = event.target.dataset.url
+window.dragStart = function dragStart(event, tileId) {
+    current = event.dataTransfer.setData("tile_id", tileId);
 }
 
-window.drop = function hmm(event) {
+window.drop = async function drop(event) {
     event.preventDefault()
+
+    console.log(`Drop event: %o`, event);
+
     const data = event.target.dataset
     const x = data.x
     const y = data.y
-    tiles[x] = tiles[x] || []
-    tiles[x][y] = tiles[x][y] || ""
-    tiles[x][y] = current
-    current = ""
+
+    // Handle dropped tile
+    if (event.dataTransfer.getData("tile_id")) {
+        const tileId = event.dataTransfer.getData("tile_id");
+        await window.placeTile(x, y, tileId);
+    }
+
     event.target.classList.remove("over")
     paint()
 }
@@ -324,6 +349,7 @@ const loadExistingGame = () => {
     const gameID = decodeURIComponent(window.location.hash.substring(1));
     if (gameID && gameID.length > 0) {
         window.gameID = gameID;
+        enterGame();
     }
 }
 
@@ -388,7 +414,11 @@ const getTile = (x, y) => {
     }
 }
 
-function paint() {
+async function paint() {
+    if (window.gameID) {
+        await fetchTiles();
+    }
+
     let grid = "";
 
     for (let y of ys) {
@@ -401,16 +431,7 @@ function paint() {
 }
 
 loadExistingGame();
-if (window.gameID) {
-    fetchTiles()
-        .then(() => {
-            paint();
-            enterGame();
-        });
-} else {
-    paint();
-}
-
+paint();
 
 const palette = document.createElement("div")
 palette.classList.add("palette")
