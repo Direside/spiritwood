@@ -19,6 +19,10 @@ pub fn server_error(message: &str) -> FailResponse {
     FailResponse::fail(500, message)
 }
 
+pub fn unprocessable(message: &str) -> FailResponse {
+    FailResponse::fail(422, message)
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct FailResponse {
     status: u16,
@@ -38,6 +42,7 @@ impl FailResponse {
             200 => Status::Ok,
             404 => Status::NotFound,
             409 => Status::Conflict,
+            422 => Status::UnprocessableEntity,
             _ => Status::InternalServerError
         }
     }

@@ -15,7 +15,7 @@ use uuid::Uuid;
 
 use crate::game::{Game, GameplayError};
 use crate::api::{Move, GameDescription, Player, PlacedTile, Tile};
-use crate::fail::{FailResponse, not_found, conflict, bad_request, server_error};
+use crate::fail::{FailResponse, not_found, conflict, bad_request, server_error, unprocessable};
 
 mod api;
 mod cards;
@@ -203,7 +203,19 @@ fn rocket() -> ::std::result::Result<rocket::Rocket, Error> {
         .manage(Mutex::new(HashMap::<Uuid, Game>::new()))
         .mount("/", routes![meta, roll, new_game, get_game, join_game,
                             get_player, start_game, get_next_tile, get_tile, place_tile, end_turn])
-        .attach(cors))
+       .attach(cors)
+       .register(catchers![catch_not_found, catch_unprocessable]))
+}
+
+#[catch(404)]
+fn catch_not_found() -> FailResponse {
+    not_found("Endpoint not found!")
+}
+
+#[catch(422)]
+fn catch_unprocessable() -> FailResponse {
+    // TODO somehow get in earlier and get serde details
+    unprocessable("Couldn't parse request!")
 }
 
 fn main() -> ::std::result::Result<(), Error> {
