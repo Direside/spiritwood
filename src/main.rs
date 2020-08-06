@@ -16,7 +16,7 @@ use uuid::Uuid;
 
 use crate::game::{Game, GameplayError};
 use crate::api::{Move, GameDescription, Player, PlacedTile, Tile};
-use crate::fail::{FailResponse, not_found, conflict, bad_request};
+use crate::fail::{FailResponse, not_found, conflict, bad_request, server_error};
 
 mod api;
 mod cards;
@@ -32,7 +32,7 @@ struct Meta {
     commit: String
 }
 
-type Result<A> = ::std::result::Result<A, FailResponse>;
+type ServerResult<A> = ::std::result::Result<A, FailResponse>;
 
 const PKG_NAME: &str = env!("CARGO_PKG_NAME");
 const PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -87,7 +87,7 @@ fn get_game(games: State<Games>, uuid: UUID) -> Option<Json<GameDescription>> {
     all.get(&uuid.uuid).map(|game| Json(game.get_description()))
 }
 
-fn with_game<A, F: FnOnce(&mut Game) -> Result<A>> (games: State<Games>, id: UUID, action: F) -> Result<A> {
+fn with_game<A, F: FnOnce(&mut Game) -> ServerResult<A>> (games: State<Games>, id: UUID, action: F) -> ServerResult<A> {
     let mut result = Err(not_found("Game not found."));
     let mut all = games.lock().unwrap();
     all.entry(id.uuid).and_modify(|g| result = action(g));
@@ -95,7 +95,7 @@ fn with_game<A, F: FnOnce(&mut Game) -> Result<A>> (games: State<Games>, id: UUI
 }
 
 #[put("/game/<uuid>?<player>")]
-fn join_game(games: State<Games>, uuid: UUID, player: String) -> Result<Json<Player>> {
+fn join_game(games: State<Games>, uuid: UUID, player: String) -> ServerResult<Json<Player>> {
     with_game(games, uuid, |game| {
         if game.players_can_join() {
             Ok(Json(game.join_new_player(player)))
@@ -107,7 +107,7 @@ fn join_game(games: State<Games>, uuid: UUID, player: String) -> Result<Json<Pla
 
 // TODO auth
 #[put("/game/<uuid>/start")]
-fn start_game(games: State<Games>, uuid: UUID) -> Result<Json<GameDescription>> {
+fn start_game(games: State<Games>, uuid: UUID) -> ServerResult<Json<GameDescription>> {
     with_game(games, uuid, |game| {
         game.start_game();
         Ok(Json(game.get_description()))
@@ -115,27 +115,29 @@ fn start_game(games: State<Games>, uuid: UUID) -> Result<Json<GameDescription>> 
 }
 
 #[get("/game/<uuid>/<name>", rank=2)]
-fn get_player(games: State<Games>, uuid: UUID, name: String) -> Result<Json<Player>> {
+fn get_player(games: State<Games>, uuid: UUID, name: String) -> ServerResult<Json<Player>> {
     with_game(games, uuid, |game| {
         game.get_player(&name).map(|p| Json(p)).ok_or(not_found("Player not found."))
     })
 }
 
 #[get("/game/<uuid>/tile")]
-fn get_next_tile(games: State<Games>, uuid: UUID) -> Result<Json<Tile>> {
+fn get_next_tile(games: State<Games>, uuid: UUID) -> ServerResult<Json<Tile>> {
     with_game(games, uuid, |game| {
-        game.pop_tile().map(|p| Json(p)).ok_or(not_found("No more tiles!"))
+        let tile = game.pop_tile()?;
+        Ok(Json(tile))
     })
 }
 
 #[get("/game/<uuid>/tiles?<x>&<y>&<radius>")]
-fn get_tile(games: State<Games>, uuid: UUID, x: i8, y: i8, radius: Option<u8>) -> Result<Json<Vec<PlacedTile>>> {
+fn get_tile(games: State<Games>, uuid: UUID, x: i8, y: i8, radius: Option<u8>) -> ServerResult<Json<Vec<PlacedTile>>> {
     with_game(games, uuid, |game| {
         let radius = match radius {
             Some(r) => r,
             None => 5,
         };
-        Ok(Json(game.get_tiles(x, y, radius)))
+        let tiles = game.get_tiles(x, y, radius)?;
+        Ok(Json(tiles))
     })
 }
 
@@ -156,7 +158,7 @@ fn place_tile(games: State<Games>, uuid: UUID, body: Json<PlaceTileRequestBody>)
 }
 
 #[put("/game/<uuid>/endturn")]
-fn end_turn(games: State<Games>, uuid: UUID) -> Result<Json<GameDescription>> {
+fn end_turn(games: State<Games>, uuid: UUID) -> ServerResult<Json<GameDescription>> {
     with_game(games, uuid, |game| {
         game.apply(Move::EndTurn)?;
         Ok(Json(game.get_description()))
@@ -167,6 +169,9 @@ impl From<GameplayError> for FailResponse {
     fn from(err: GameplayError) -> FailResponse {
         match err {
             GameplayError::IllegalMove(msg) => conflict(msg),
+            GameplayError::OutOfTurn(msg) => bad_request(msg),
+            GameplayError::ItemNotFound(msg) => not_found(msg),
+            GameplayError::NotImplemented(msg) => server_error(msg)
         }
     }
 }

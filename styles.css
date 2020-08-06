@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css?family=Press+Start+2P&display=swap');
+@IMPORT url('https://fonts.googleapis.com/css?family=Press+Start+2P&display=swap');
 h1, h2, p {
     font-family: 'Press Start 2P';
 }
@@ -62,6 +62,7 @@ h1, h2, p {
 .board-cell {
     background: rgba(0, 0, 0, 0.2);
     border-radius: 3px;
+    background-size: 36px 36px;
 }
 
 .board-cell.over {

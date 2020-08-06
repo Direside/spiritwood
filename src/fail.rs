@@ -15,6 +15,10 @@ pub fn bad_request(message: &str) -> FailResponse {
     FailResponse::fail(400, message)
 }
 
+pub fn server_error(message: &str) -> FailResponse {
+    FailResponse::fail(500, message)
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct FailResponse {
     status: u16,
