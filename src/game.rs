@@ -1,5 +1,5 @@
-use crate::api::{Etag, GameDescription, Player, Move, GameState, PlacedTile, Tile};
-use crate::state::{Biome, Board, Card};
+use crate::api::{GameDescription, Player, Move, GameState, PlacedTile, Tile};
+use crate::state::{Biome, Card};
 use rand::thread_rng;
 use rand::Rng;
 use std::collections::HashMap;
@@ -125,7 +125,8 @@ impl Game {
     pub fn apply(&mut self, action: Move) -> GameResult<()> {
         // TODO: Actually execute the moves
         match action {
-            Move::ReadyToStart { name } => GameplayError::not_implemented("Move: ReadyToStart"),
+            Move::ReadyToStart { name: _ } =>
+                GameplayError::not_implemented("Move: ReadyToStart"),
             Move::RollDice {} => GameplayError::not_implemented("Move: RollDice"),
             Move::DrawCard {} => GameplayError::not_implemented("Move: DrawCard"),
             Move::PlaceTile { x, y, tile_id, rotation } => self.set_tile(x, y, tile_id, rotation),

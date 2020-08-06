@@ -1,6 +1,4 @@
-use crate::api::{Etag, Href, Move, GameState, Tile};
-use crate::cards;
-
+use crate::api::Tile;
 
 // impl Default for everything
 
@@ -102,7 +100,7 @@ impl Biome {
     }
 
     pub fn load_biomes() -> Vec<Biome> {
-        let mut biomes = vec![
+        let biomes = vec![
             Self::new(0, "Nature"),
             Self::new(1, "Town"),
             Self::new(2, "Industrial"),

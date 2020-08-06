@@ -1,14 +1,13 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 
 #[macro_use] extern crate rocket;
-#[macro_use] extern crate rocket_contrib;
 #[macro_use] extern crate serde_derive;
 
 use rocket::State;
 
 use rocket::http::{Method, RawStr};
 use rocket::request::FromParam;
-use rocket_contrib::json::{Json, JsonValue};
+use rocket_contrib::json::Json;
 use rocket_cors::{self, AllowedHeaders, AllowedOrigins, Error};
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -25,7 +24,7 @@ mod fail;
 mod game;
 mod state;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 struct Meta {
     name: String,
     version: String,
@@ -41,31 +40,29 @@ const GIT_COMMIT: &str = env!("GIT_HEAD");
 impl Meta {
     pub fn generate() -> MetaHolder {
         MetaHolder {
-            json: json!(
-                Meta {
+            meta: Meta {
                     name: PKG_NAME.to_string(),
                     version: PKG_VERSION.to_string(),
                     commit: GIT_COMMIT.to_string()
                 }
-            )
         }
     }
 }
 
 struct MetaHolder {
-    json: JsonValue
+    meta: Meta
 }
 
 type Games = Mutex<HashMap<Uuid, Game>>;
 
 #[get("/meta")]
-fn meta(meta: State<MetaHolder>) -> JsonValue {
-    json!(meta.json)
+fn meta(state: State<MetaHolder>) -> Json<Meta> {
+    Json(state.meta.clone())
 }
 
 #[get("/roll")]
-fn roll() -> JsonValue {
-    json!(dice::roll(1, 6))
+fn roll() -> Json<Vec<u16>> {
+    Json(dice::roll(1, 6))
 }
 
 #[options("/game")]
@@ -82,9 +79,10 @@ fn new_game(games: State<Games>) -> Json<GameDescription> {
 }
 
 #[get("/game/<uuid>")]
-fn get_game(games: State<Games>, uuid: UUID) -> Option<Json<GameDescription>> {
+fn get_game(games: State<Games>, uuid: UUID) -> ServerResult<Json<GameDescription>> {
     let all = games.lock().unwrap();
-    all.get(&uuid.uuid).map(|game| Json(game.get_description()))
+    let game = all.get(&uuid.uuid).ok_or(not_found("Game not found!"))?;
+    Ok(Json(game.get_description()))
 }
 
 fn with_game<A, F: FnOnce(&mut Game) -> ServerResult<A>> (games: State<Games>, id: UUID, action: F) -> ServerResult<A> {
@@ -117,7 +115,8 @@ fn start_game(games: State<Games>, uuid: UUID) -> ServerResult<Json<GameDescript
 #[get("/game/<uuid>/<name>", rank=2)]
 fn get_player(games: State<Games>, uuid: UUID, name: String) -> ServerResult<Json<Player>> {
     with_game(games, uuid, |game| {
-        game.get_player(&name).map(|p| Json(p)).ok_or(not_found("Player not found."))
+        let player = game.get_player(&name).ok_or(not_found("Player not found."))?;
+        Ok(Json(player))
     })
 }
 
@@ -150,11 +149,12 @@ struct PlaceTileRequestBody {
 }
 
 #[put("/game/<uuid>/placetile", data = "<body>")]
-fn place_tile(games: State<Games>, uuid: UUID, body: Json<PlaceTileRequestBody>) -> ServerResult<Json<PlacedTile>> {
+fn place_tile(games: State<Games>, uuid: UUID, body: Json<PlaceTileRequestBody>) -> ServerResult<Json<Tile>> {
     with_game(games, uuid, |game| {
         game.apply(Move::PlaceTile { x: body.x, y: body.y, tile_id: body.tile, rotation: body.rotation })?;
-        let tile = game.get_tile(body.x, body.y);
-        Ok(Json(PlacedTile{x: body.x, y: body.y, tile: tile.unwrap(), rotation: body.rotation }))})
+        let tile = game.get_tile(body.x, body.y).ok_or(server_error("tile placement failed"))?;
+        Ok(Json(tile))
+    })
 }
 
 #[put("/game/<uuid>/endturn")]
@@ -189,12 +189,6 @@ impl<'a> FromParam<'a> for UUID {
     }
 }
 
-#[catch(404)]
-fn not_found_catcher() -> JsonValue {
-    json!({"status": 404, "message": "Not Found."})
-}
-
-
 fn rocket() -> ::std::result::Result<rocket::Rocket, Error> {
     let cors = rocket_cors::CorsOptions {
         allowed_origins: AllowedOrigins::all(),
@@ -209,8 +203,7 @@ fn rocket() -> ::std::result::Result<rocket::Rocket, Error> {
         .manage(Mutex::new(HashMap::<Uuid, Game>::new()))
         .mount("/", routes![meta, roll, new_game, get_game, join_game,
                             get_player, start_game, get_next_tile, get_tile, place_tile, end_turn])
-        .attach(cors)
-        .register(catchers![not_found_catcher]))
+        .attach(cors))
 }
 
 fn main() -> ::std::result::Result<(), Error> {
