@@ -17,7 +17,7 @@ let height = 10;
 let width = 15;
 let bits = "36px"
 
-const backend = "http://localhost:8000"
+const backend = "http://192.168.0.104:8000"
 
 window.allTiles = [
     "bear_cave_corner_symbol.png",
@@ -45,7 +45,7 @@ window.clearPlayName = function clearPlayName() {
 }
 
 window.newGame = function newGame() {
-    fetch("http://localhost:8000/game", {
+    fetch(`${backend}/game`, {
         // mode: 'no-cors',
         method: "POST",
         headers: new Headers({
@@ -72,7 +72,7 @@ window.joinGame = function joinGame() {
     }
 
     document.getElementById("debugGameID").innerText = window.gameID
-    fetch(`http://localhost:8000/game/${window.gameID}?player=${window.playerName}`, {
+    fetch(`${backend}/game/${window.gameID}?player=${window.playerName}`, {
         method: "PUT"
     }).then((data) => {
         window.playerID = data.playerID
@@ -84,7 +84,7 @@ window.joinGame = function joinGame() {
 }
 
 window.updatePlayerList = function getGame() {
-    fetch(`http://localhost:8000/game/${window.gameID}/`, {
+    fetch(`${backend}/game/${window.gameID}/`, {
         method: "GET"
     })
         .then((response) => {
