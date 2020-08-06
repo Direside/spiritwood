@@ -1,4 +1,4 @@
-use rocket_contrib::json::{Json, JsonValue};
+use rocket_contrib::json::Json;
 use rocket::request::Request;
 use rocket::response::{self, Response,Responder};
 use rocket::http::{ContentType, Status};
