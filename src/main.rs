@@ -144,15 +144,15 @@ struct PlaceTileRequestBody {
     x: i8,
     y: i8,
     tile: u32, // Tile ID
+    rotation: u8 // rotation
 }
 
 #[put("/game/<uuid>/placetile", data = "<body>")]
-fn place_tile(games: State<Games>, uuid: UUID, body: Json<PlaceTileRequestBody>) -> Result<Json<Tile>> {
+fn place_tile(games: State<Games>, uuid: UUID, body: Json<PlaceTileRequestBody>) -> ServerResult<Json<PlacedTile>> {
     with_game(games, uuid, |game| {
-        game.apply(Move::PlaceTile { x: body.x, y: body.y, tile_id: body.tile })?;
+        game.apply(Move::PlaceTile { x: body.x, y: body.y, tile_id: body.tile, rotation: body.rotation })?;
         let tile = game.get_tile(body.x, body.y);
-        Ok(Json(tile.unwrap()))
-    })
+        Ok(Json(PlacedTile{x: body.x, y: body.y, tile: tile.unwrap(), rotation: body.rotation }))})
 }
 
 #[put("/game/<uuid>/endturn")]
