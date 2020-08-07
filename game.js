@@ -17,7 +17,7 @@ let height = 10;
 let width = 15;
 let bits = "36px"
 
-const backend = "http://192.168.0.104:8000"
+const backend = "http://localhost:8000"
 const frontend = "http://localhost:5000"
 
 window.allTiles = [
