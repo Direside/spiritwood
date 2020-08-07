@@ -1,4 +1,4 @@
-use rocket_contrib::json::{Json, JsonValue};
+use rocket_contrib::json::Json;
 use rocket::request::Request;
 use rocket::response::{self, Response,Responder};
 use rocket::http::{ContentType, Status};
@@ -13,6 +13,14 @@ pub fn conflict(message: &str) -> FailResponse {
 
 pub fn bad_request(message: &str) -> FailResponse {
     FailResponse::fail(400, message)
+}
+
+pub fn server_error(message: &str) -> FailResponse {
+    FailResponse::fail(500, message)
+}
+
+pub fn unprocessable(message: &str) -> FailResponse {
+    FailResponse::fail(422, message)
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -34,6 +42,7 @@ impl FailResponse {
             200 => Status::Ok,
             404 => Status::NotFound,
             409 => Status::Conflict,
+            422 => Status::UnprocessableEntity,
             _ => Status::InternalServerError
         }
     }

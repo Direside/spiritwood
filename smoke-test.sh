@@ -3,7 +3,7 @@
 set -e
 
 #SVR=${SVR-https://ecs.eddsteel.com}
-SVR="${SVR-http://localhost:8000}"
+SVR="${SVR-http://192.168.0.104:8000}"
 CRL="curl -s"
 
 echo "Create a game"
@@ -35,13 +35,15 @@ echo "Check for missing map tile"
 $CRL "$SVR/game/$id/tiles?x=3&y=5" | jq .
 
 echo "Place a tile on the map"
-$CRL -X PUT $SVR/game/$id/placetile --data "{\"x\": 3, \"y\": 5, \"tile\": ${TILE_ID}}" | jq .
+$CRL -X PUT $SVR/game/$id/placetile \
+     --data "{\"x\": 3, \"y\": 5, \"rotation\": 0, \"tile\": ${TILE_ID}}" | jq .
 
 echo "Check the tile was placed"
 $CRL "$SVR/game/$id/tiles?x=3&y=5" | jq .
 
 echo "Place a tile on a spot that's not empty"
-$CRL -X PUT $SVR/game/$id/placetile --data "{\"x\": 3, \"y\": 5, \"tile\": ${TILE_ID}}" | jq .
+$CRL -X PUT $SVR/game/$id/placetile \
+     --data "{\"x\": 3, \"y\": 5, \"rotation\": 1, \"tile\": ${TILE_ID}}" | jq .
 
 echo "End turn"
 $CRL -X PUT $SVR/game/$id/endturn | jq .

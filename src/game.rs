@@ -1,10 +1,13 @@
-use crate::api::{Etag, GameDescription, Player, Move, GameState, PlacedTile, Tile};
-use crate::state::{Biome, Board, Card};
+use crate::api::{GameDescription, Player, Move, GameState, PlacedTile, Tile};
+use crate::state::{Biome, Card};
 use rand::thread_rng;
 use rand::Rng;
 use std::collections::HashMap;
 
 use uuid::Uuid;
+
+type Rotation = u8; // 0, 1, 2, 3
+type TileID = u32;
 
 // complete record of the game that's stored on the server
 #[derive(Debug, Default)]
@@ -15,7 +18,7 @@ pub struct Game {
     turn: u32,
     players: Vec<Player>,
     current_player: usize, // Corresponds to index in players array.
-    tile_stack: Vec<u32>,
+    tile_stack: Vec<TileID>,
     tile_repo: TileRepository,
     tilemap: TileMap,
     biomes: Vec<Biome>, // TODO: useful structure for these
@@ -82,14 +85,10 @@ impl Game {
         self.turn = 1;
     }
 
-    // TODO: move to turn
-    pub fn pop_tile(&mut self) -> Option<Tile> {
-        self.tile_stack.pop().map(|tile_id| {
-            match self.tile_repo.get(tile_id) {
-                Some(tile) => tile,
-                None => panic!("Tile does not exist: {}", tile_id),
-            }
-        })
+    pub fn pop_tile(&mut self) -> GameResult<Tile> {
+        self.tile_stack.pop().and_then(|tile_id| {
+            self.tile_repo.get(tile_id)
+        }).ok_or(GameplayError::ItemNotFound("No more tiles!"))
     }
 
     pub fn get_player(&self, name: &str) -> Option<Player> {
@@ -97,54 +96,56 @@ impl Game {
     }
 
     pub fn get_tile(&self, x: i8, y: i8) -> Option<Tile> {
-      self.tilemap.get_tile(x, y).map(|id| self.tile_repo.get(id).unwrap())
+        self.tilemap.get_tile(x, y).map(|(id, _)| self.tile_repo.get(id).unwrap())
     }
 
-    pub fn get_tiles(&self, x: i8, y: i8, radius: u8) -> Vec<PlacedTile> {
+    pub fn get_tiles(&self, x: i8, y: i8, radius: u8) -> GameResult<Vec<PlacedTile>> {
         if radius > 10 {
-            panic!("Cannot request more than 401 tiles (r=10).")
+            return Err(GameplayError::IllegalMove("Cannot request more than 401 tiles (r=10)."))
         }
 
         let mut result = vec![];
         for i in (x - radius as i8)..(x + radius as i8) {
             for j in (y - radius as i8)..(y as i8 + radius as i8) {
-                match self.tilemap.get_tile(i, j).and_then(|tile_id| self.tile_repo.get(tile_id)) {
-                    Some(tile) => result.push(PlacedTile {
+                match self.tilemap.get_tile(i, j).and_then(|(tile_id, r)| self.tile_repo.get(tile_id).map(|t| (t, r))) {
+                    Some((tile, rotation)) => result.push(PlacedTile {
                         x: i,
                         y: j,
+                        rotation: rotation,
                         tile: tile,
                     }),
                     None => {},
                 }
             }
         }
-
-        result
+        
+        Ok(result)
     }
 
-    pub fn apply(&mut self, action: Move) -> Result<(), GameplayError> {
+    pub fn apply(&mut self, action: Move) -> GameResult<()> {
         // TODO: Actually execute the moves
         match action {
-            Move::ReadyToStart { name } => panic!("Move: ReadyToStart {}", name),
-            Move::RollDice {} => panic!("Move: RollDice"),
-            Move::DrawCard {} => panic!("Move: DrawCard"),
-            Move::PlaceTile { x, y, tile_id } => self.set_tile(x, y, tile_id),
+            Move::ReadyToStart { name: _ } =>
+                GameplayError::not_implemented("Move: ReadyToStart"),
+            Move::RollDice {} => GameplayError::not_implemented("Move: RollDice"),
+            Move::DrawCard {} => GameplayError::not_implemented("Move: DrawCard"),
+            Move::PlaceTile { x, y, tile_id, rotation } => self.set_tile(x, y, tile_id, rotation),
             Move::EndTurn {} => self.end_turn(),
         }
     }
 
-    fn set_tile(&mut self, x: i8, y: i8, tile_id: u32) -> Result<(), GameplayError> {
+    fn set_tile(&mut self, x: i8, y: i8, tile_id: TileID, rotation: Rotation) -> GameResult<()> {
         match self.get_tile(x, y) {
             Some(_) => Err(GameplayError::IllegalMove("A tile has already been placed here.")),
             None => {
-                self.tilemap.set_tile(x, y, tile_id);
+                self.tilemap.set_tile(x, y, tile_id, rotation);
                 Ok(())
             },
         }
 
     }
 
-    fn end_turn(&mut self) -> Result<(), GameplayError> {
+    fn end_turn(&mut self) -> GameResult<()> {
         let next_player = (self.current_player + 1) % self.players.len();
         self.current_player = next_player;
         self.turn += 1;
@@ -152,31 +153,41 @@ impl Game {
     }
 }
 
+type GameResult<T> = ::std::result::Result<T, GameplayError>;
 pub enum GameplayError {
-  IllegalMove(&'static str),
+    IllegalMove(&'static str),
+    OutOfTurn(&'static str),
+    ItemNotFound(&'static str), // Toby: did you mean for such things to be "gameplay" errors?
+    NotImplemented(&'static str)
+}
+
+impl GameplayError {
+    fn not_implemented<T>(str: &'static str) -> GameResult<T> {
+        Err(GameplayError::NotImplemented(str))
+    }
 }
 
 #[derive(Debug, Default)]
 pub struct TileMap {
-    tiles: HashMap::<TilePosition, u32>,
+    tiles: HashMap::<TilePosition, (TileID, Rotation)>,
 }
 
 impl TileMap {
     pub fn new() -> Self {
         Self {
-            tiles: HashMap::<TilePosition, u32>::new(),
+            tiles: HashMap::<TilePosition, (TileID, Rotation)>::new(),
         }
     }
 
-    pub fn get_tile(&self, x: i8, y: i8) -> Option<u32> {
+    pub fn get_tile(&self, x: i8, y: i8) -> Option<(TileID, Rotation)> {
         let pos = TilePosition { x, y };
-        self.tiles.get(&pos).map(|tile| tile.clone())
+        self.tiles.get(&pos).map(|(tile, r)| (tile.clone(), r.clone()))
 
     }
 
-    pub fn set_tile(&mut self, x: i8, y: i8, tile_id: u32) {
+    pub fn set_tile(&mut self, x: i8, y: i8, tile_id: TileID, rotation: Rotation) {
         let pos = TilePosition { x, y };
-        self.tiles.insert(pos, tile_id);
+        self.tiles.insert(pos, (tile_id, rotation));
     }
 }
 
@@ -228,9 +239,7 @@ mod tests {
         let mut game = Game::create();
 
         let tile = game.pop_tile();
-        if tile == None {
-            panic!("No tile was returned.");
-        }
+        assert!(tile.is_ok());
     }
 
     #[test]
@@ -252,9 +261,9 @@ mod tests {
 
         assert_eq!(tile_map.get_tile(5, 8), None);
 
-        tile_map.set_tile(5, 8, tileset[1].id);
+        tile_map.set_tile(5, 8, tileset[1].id, 0);
 
-        assert_eq!(tile_map.get_tile(5, 8), Some(tileset[1].id));
+        assert_eq!(tile_map.get_tile(5, 8), Some((tileset[1].id, 0)));
     }
 
     #[test]

@@ -21,7 +21,7 @@ impl Default for GameState {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum Move {
     ReadyToStart { name: String },
-    PlaceTile { x: i8, y: i8, tile_id: u32 },
+    PlaceTile { x: i8, y: i8, tile_id: u32, rotation: u8},
     DrawCard,
     RollDice,
     EndTurn,
@@ -73,5 +73,6 @@ pub struct Tile {
 pub struct PlacedTile {
     pub x: i8,
     pub y: i8,
+    pub rotation: u8,
     pub tile: Tile,
 }
