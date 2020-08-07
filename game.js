@@ -18,6 +18,7 @@ let width = 15;
 let bits = "36px"
 
 const backend = "http://192.168.0.104:8000"
+const frontend = "http://localhost:5000"
 
 window.allTiles = [
     "bear_cave_corner_symbol.png",
@@ -142,6 +143,7 @@ window.getNextTile = function getNextTile() {
         return r.json();
     })
     .then(data => {
+        window.tile = data
         nextTileImage.innerHTML = `<img src='${data.image}' ondragstart='dragStart(event, ${data.id})' height='80 width='80' />`;
     });
 }
@@ -157,7 +159,7 @@ window.getBoardTiles = async function getBoardTiles(x, y, radius) {
     });
 }
 
-window.placeTile = async function placeTile(x, y, tileId) {
+window.placeTile = async function placeTile(x, y, tileId, rotation) {
     x = parseInt(x);
     y = parseInt(y);
     tileId = parseInt(tileId);
@@ -172,6 +174,7 @@ window.placeTile = async function placeTile(x, y, tileId) {
             x,
             y,
             tile: tileId,
+            rotation
         }),
     });
 }
@@ -304,7 +307,48 @@ let tiles = [];
 
 var current = ""
 
-window.dragStart = function dragStart(event, tileId) {
+window.rotateLeft = function rotateLeft() {
+    window.rotation = (window.rotation + 3) % 4;
+    updateLocalTile();
+}
+
+window.rotateRight = function rotateRight() {
+    window.rotation = (window.rotation + 1) % 4;
+    updateLocalTile();
+}
+
+const updateLocalTile = () => {
+    let el = document.getElementById(`board-${window.x}-${window.y}`);
+    let r = window.rotation * 90;
+    console.log("Updating rotation: ", window.rotation)
+    switch (r) {
+        case 0:
+            el.classList.remove('rotate-90');
+            el.classList.remove('rotate-180');
+            el.classList.remove('rotate-270');
+            break;
+        case 90:
+            el.classList.remove('rotate-0');
+            el.classList.remove('rotate-180');
+            el.classList.remove('rotate-270');
+            break;
+        case 180:
+            el.classList.remove('rotate-0');
+            el.classList.remove('rotate-90');
+            el.classList.remove('rotate-270');
+            break;
+        case 270:
+            el.classList.remove('rotate-0');
+            el.classList.remove('rotate-90');
+            el.classList.remove('rotate-180');
+            break;
+    }
+    el.classList.add(`rotate-${r}`);
+    el.style = `background-image: url(${window.tile.image})`;
+    console.log("UDAPTE", window.tile.image)
+}
+
+window.dragStart = function dragStart(event, tileId, image) {
     current = event.dataTransfer.setData("tile_id", tileId);
 }
 
@@ -316,15 +360,15 @@ window.drop = async function drop(event) {
     const data = event.target.dataset
     const x = data.x
     const y = data.y
+    window.x = x
+    window.y = y
+    window.rotation = 0
 
-    // Handle dropped tile
-    if (event.dataTransfer.getData("tile_id")) {
-        const tileId = event.dataTransfer.getData("tile_id");
-        await window.placeTile(x, y, tileId);
-    }
-
+    let handleDrop = document.getElementById("submit-tile-button")
+    handleDrop.onclick = async function() { await window.placeTile(x, y, window.tile.id, window.rotation); };
+    
     event.target.classList.remove("over")
-    paint()
+    updateLocalTile();
 }
 
 window.over = function over(event) {
@@ -396,10 +440,14 @@ const fetchTiles = async () => {
     const y = top + radius + (diameter % 2);
 
     const placedTiles = await window.getBoardTiles(x, y, radius);
+    console.log("Placed Tiles: ", placedTiles)
     for (const placedTile of placedTiles) {
         if (!tiles[placedTile.x]) {
             tiles[placedTile.x] = [];
         }
+
+        // TODO: Change structure on the backend to make this no longer required.
+        placedTile.tile.rotation = placedTile.rotation;
 
         tiles[placedTile.x][placedTile.y] = placedTile.tile;
     }
@@ -414,6 +462,16 @@ const getTile = (x, y) => {
     }
 }
 
+const getRotation = (x, y) => {
+    const tile = (tiles[x] || [])[y]
+    console.log("TILE: ", tile)
+    if (tile && tile.hasOwnProperty('rotation')) {
+        return tile.rotation * 90
+    } else {
+        return 0
+    }
+}
+
 async function paint() {
     if (window.gameID) {
         await fetchTiles();
@@ -423,7 +481,7 @@ async function paint() {
 
     for (let y of ys) {
         for (let x of xs) {
-            grid += `<div id="board-${x}-${y}" class="board-cell" data-x="${x}" data-y="${y}" ondragover="over(event)" ondrop="drop(event)" ondragenter="enter(event)" ondragleave="leave(event)" style="${getTile(x, y)}"></div>`
+            grid += `<div id="board-${x}-${y}" class="board-cell rotate-${getRotation(x,y)}" data-x="${x}" data-y="${y}" ondragover="over(event)" ondrop="drop(event)" ondragenter="enter(event)" ondragleave="leave(event)" style="${getTile(x, y)}"></div>`
         }
     }
 
@@ -447,4 +505,4 @@ for (let img of images) {
     paletteEl.ondragstart = window.dragStart
     palette.appendChild(paletteEl)
 }
-document.getElementById("hand").appendChild(palette)
+// document.getElementById("hand").appendChild(palette)

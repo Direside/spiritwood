@@ -1,3 +1,5 @@
 /.cache
 /dist
 /target
+
+npm-debug.log
