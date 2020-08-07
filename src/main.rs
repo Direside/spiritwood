@@ -9,11 +9,12 @@ use rocket::http::{Method, RawStr};
 use rocket::request::FromParam;
 use rocket_contrib::json::Json;
 use rocket_cors::{self, AllowedHeaders, AllowedOrigins, Error};
+use rocket::fairing::AdHoc;
 use std::collections::HashMap;
 use std::sync::Mutex;
 use uuid::Uuid;
 
-use crate::game::{Game, GameplayError};
+use crate::game::{Game, GameConfig, GameplayError};
 use crate::api::{Move, GameDescription, Player, PlacedTile, Tile};
 use crate::fail::{FailResponse, not_found, conflict, bad_request, server_error, unprocessable};
 
@@ -71,8 +72,8 @@ fn new_game_preflight() -> Json<u8> {
 }
 
 #[post("/game")]
-fn new_game(games: State<Games>) -> Json<GameDescription> {
-    let game = Game::create();
+fn new_game(games: State<Games>, config: State<GameConfig>) -> Json<GameDescription> {
+    let game = Game::create(&config);
     let description = game.get_description();
     games.lock().unwrap().insert(description.id, game);
     Json(description)
@@ -199,12 +200,18 @@ fn rocket() -> ::std::result::Result<rocket::Rocket, Error> {
     }.to_cors()?;
 
     Ok(rocket::ignite()
-        .manage(Meta::generate())
-        .manage(Mutex::new(HashMap::<Uuid, Game>::new()))
-        .mount("/", routes![meta, roll, new_game, get_game, join_game,
-                            get_player, start_game, get_next_tile, get_tile, place_tile, end_turn])
+       .manage(Meta::generate())
+       .manage(Mutex::new(HashMap::<Uuid, Game>::new()))
+       .mount("/", routes![meta, roll, new_game, get_game, join_game,
+                           get_player, start_game, get_next_tile, get_tile, place_tile, end_turn])
+       .register(catchers![catch_not_found, catch_unprocessable])
        .attach(cors)
-       .register(catchers![catch_not_found, catch_unprocessable]))
+       .attach(AdHoc::on_attach("Game Config", |r| {
+           let game_config = GameConfig {
+               tile_deck: r.config().get_int("tile_deck").unwrap()
+           };
+           Ok(r.manage(game_config))
+       })))
 }
 
 #[catch(404)]

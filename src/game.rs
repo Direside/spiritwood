@@ -9,7 +9,10 @@ use uuid::Uuid;
 type Rotation = u8; // 0, 1, 2, 3
 type TileID = u32;
 
-// complete record of the game that's stored on the server
+pub struct GameConfig {
+    pub tile_deck: i64
+}
+
 #[derive(Debug, Default)]
 pub struct Game {
     id: Uuid,
@@ -26,14 +29,14 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn create() -> Game {
+    pub fn create(config: &GameConfig) -> Game {
         let id = Uuid::new_v4();
         let etag = Uuid::new_v4();
         let tileset = Tile::load_tiles();
         let biomes = Biome::load_biomes();
         let mut rng = thread_rng();
         let tile_repo = TileRepository::new(&tileset);
-        let tile_stack: Vec<u32> = (1..20).map(|_| {
+        let tile_stack: Vec<u32> = (1..config.tile_deck).map(|_| {
             tileset[rng.gen_range(1, tileset.len())].id
         }).collect();
 
