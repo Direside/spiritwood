@@ -40,7 +40,7 @@ impl Tile {
             Self::new(4, 'T', "images/tiles/branch.png"),
             Self::new(5, 'L', "images/tiles/corner.png"),
             Self::new(6, 'L', "images/tiles/corner-mine.png"),
-            Self::new(7, '.', "images/tiles/branch.png"),
+            Self::new(7, '.', "images/tiles/dead-end.png"),
         ]
      }
 }

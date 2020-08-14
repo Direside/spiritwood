@@ -1,9 +1,9 @@
 'use strict';
 
-function rollDice(displayElement) {
+function rollDice(id) {
+    let el = document.getElementById(id);
     let result = Math.floor(Math.random() * 6) + 1;
     displayElement.src = `./images/dice/d${result}.png`;
-    console.log(displayElement)
 }
 
 export { rollDice }

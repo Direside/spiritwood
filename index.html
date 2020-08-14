@@ -8,7 +8,6 @@
             <h1>Spiritwood</h1>
         </div>
         <div class="center">
-
             <div id="menu">
                 <ul>
                     <li><a onclick="newGame();">New Game</a></li>
@@ -26,22 +25,20 @@
             <div id="credits" class="hide">
                 <h1>Credits</h1>
                 <h2>Programming</h2>
-                <p>Shane Gearon<br />James Hunter<br />Edd Steel</p>
+                <p>Shane Gearon<br />James Hunter<br />Edd Steel<br />Toby Sullivan</p>
                 <h2>Art</h2>
                 <p>Shane Gearon</p>
                 <h2>Testing</h2>
                 <p>Edd Steel</p>
             </div>
             <div id="main" class="hide">
-
                 <div id="board"></div>
                 <div id="rotation-toolbar">
-                    <button id="rotate-left-button" onclick="rotateLeft()" >&larr;</button>
+                    <button id="rotate-left-button" onclick="rotateLeft()">&larr;</button>
                     <button id="submit-tile-button">OK</button>
                     <button id="rotate-right-button" onclick="rotateRight()">&rarr;</button>
                 </div>
             </div>
-
         </div>
         <div class="left" class="hide">
             <div class="player-info side-item">
@@ -58,7 +55,8 @@
                 <span id="players-turn">...</span><br />
                 <div id="next-tile-image" class="tile-image"></div>
                 1. <button id="get-tile" onclick="getNextTile()">Get Tile</button><br />
-                2. <button id="get-tile" onclick="getNextTile()" disabled="disabled">Move</button> and/or <button id="get-tile" onclick="getNextTile()" disabled="disabled">Search</button><br />
+                2. <button id="get-tile" onclick="getNextTile()" disabled="disabled">Move</button> and/or <button
+                    id="get-tile" onclick="getNextTile()" disabled="disabled">Search</button><br />
                 <img id="dice-image" /><br />
                 3.<button id="roll" onclick="roll('dice-image')" disabled="disabled">Attack Roll</button><br />
                 4. <button id="end" onclick="endTurn()">End Turn</button>
@@ -88,5 +86,5 @@
         </div>
         <div class="bottom"></div>
     </div>
-    <script src="game.js" type="module"></script>
+    <script src="ui/init.js" type="module"></script>
 </body>

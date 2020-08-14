@@ -45,4 +45,30 @@ function shuffle(array) {
     return array;
 }
 
-export {shuffle, shuffle2, addToDeck, drawCard};
+// Monster Decks
+function setCardArt(cardName, flippedCard) {
+    switch (cardName) {
+        case "skeleton":
+        case "zombie":
+        case "dracula":
+            flippedCard.classList.add("monster");
+            break;
+        case "sword":
+        case "shield":
+        case "potion":
+            flippedCard.classList.add("item");
+            break;
+        default:
+            flippedCard.classList.remove("monster");
+            flippedCard.classList.remove("item");
+    }
+}
+
+function draw(deck, discard, displayId) {
+    let discardPile = document.getElementById(displayId);
+    let card = drawCard(deck, discard);
+    discardPile.innerHTML = `<span>${card}</span>`
+    setCardArt(card, discardPile);
+}
+
+export {shuffle, shuffle2, addToDeck, drawCard, draw};
