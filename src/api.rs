@@ -34,7 +34,7 @@ pub struct GameDescription {
     pub href: Href,
     pub players: Vec<String>,
     pub turn: u32,
-    pub current_player: Option<String>,
+    pub current_player: Option<usize>,
     pub current: Etag,
 }
 

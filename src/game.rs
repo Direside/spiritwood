@@ -63,7 +63,7 @@ impl Game {
 
         let mut current_player = None;
         if self.state == GameState::PLAYING {
-            current_player = Some(String::from(&players[self.current_player]));
+            current_player = Some(self.current_player);
         }
 
         GameDescription {
@@ -85,6 +85,7 @@ impl Game {
 
     pub fn start_game(&mut self) {
         self.state = GameState::PLAYING;
+        self.current_player = 0;
         self.turn = 1;
     }
 
