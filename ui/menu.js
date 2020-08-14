@@ -13,4 +13,16 @@ function creditScreen() {
     menu.classList.add("hide");
 }
 
-export { readyScreen, creditScreen }
+function disablePlayerActions() {
+    document.getElementById('get-tile').disabled = true;
+    document.getElementById('move').disabled = true;
+    document.getElementById('search').disabled = true;
+    document.getElementById('roll').disabled = true;
+    document.getElementById('end').disabled = true;
+}
+
+function enableGetTile() {
+    document.getElementById('get-tile').disabled = false;
+}
+
+export { readyScreen, creditScreen, disablePlayerActions, enableGetTile }

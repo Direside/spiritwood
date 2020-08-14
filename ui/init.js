@@ -95,6 +95,7 @@ async function paint() {
 loadExistingGame();
 paint();
 
+getGame();
 setInterval(() => {
     if (window.gameID) {
         getGame()

@@ -51,12 +51,12 @@
                 <button id="roll" onclick="roll('dice-image')">Roll</button>
             </div>
             <div id="end-turn" class="side-item">
-                <p>Player's Turn</p>
+                <p>Turn <span id="turn-number">0</span></p>
                 <span id="players-turn">...</span><br />
                 <div id="next-tile-image" class="tile-image"></div>
                 1. <button id="get-tile" onclick="getNextTile()">Get Tile</button><br />
-                2. <button id="get-tile" onclick="getNextTile()" disabled="disabled">Move</button> and/or <button
-                    id="get-tile" onclick="getNextTile()" disabled="disabled">Search</button><br />
+                2. <button id="move" onclick="getNextTile()" disabled="disabled">Move</button> and/or <button
+                    id="search" onclick="getNextTile()" disabled="disabled">Search</button><br />
                 <img id="dice-image" /><br />
                 3. <button id="roll" onclick="roll('dice-image')" disabled="disabled">Attack Roll</button><br />
                 4. <button id="end" onclick="endTurn()">End Turn</button>

@@ -1,6 +1,7 @@
 'use strict';
 
 import { getCookie } from './cookie.js'
+import { disablePlayerActions, enableGetTile } from './menu.js';
 
 function newGame() {
     fetch(`${window.backend}/game`, {
@@ -14,11 +15,31 @@ function newGame() {
             return response.json();
         })
         .then((data) => {
-            console.log(data);
             window.gameID = data.id
-            console.log(window.gameID)
             window.joinGame()
         });
+}
+
+function joinGame() {
+    window.playerName = getCookie("playerName")
+    
+    if (!window.gameID) {
+        window.gameID = prompt("Game ID")
+    }
+    
+    document.getElementById("debugGameID").innerText = window.gameID
+    fetch(`${window.backend}/game/${window.gameID}?player=${window.playerName}`, {
+        method: "PUT"
+    }).then((response) => {
+        return response.json();
+    }).then((data) => {
+        localStorage.setItem('playerIndex', data.order);
+        window.playerID = data.order;
+        window.headers += new Headers({
+            "Authorization": `Bearer ${data.key}`
+        });
+        window.readyScreen();
+    })
 }
 
 function getGame() {
@@ -44,28 +65,20 @@ function getGame() {
 
             players.innerHTML = playersHTML
 
-            let playersTurn = document.getElementById('players-turn')
-            playersTurn.innerText = window.players[0];
+            let turnNumber = document.getElementById('turn-number');
+            turnNumber.innerText = data.turn;
+
+            let playersTurn = document.getElementById('players-turn');
+            playersTurn.innerText = window.players[data.current_player];
+
+            if (data.current_player != localStorage.getItem('playerIndex')){
+                console.log("not your turn", data.current_player, "!=", window.playerID)
+                disablePlayerActions();
+            } else {
+                console.log("it's your turn")
+                enableGetTile();
+            }
         })
-}
-
-function joinGame() {
-    window.playerName = getCookie("playerName")
-
-    if (!window.gameID) {
-        window.gameID = prompt("Game ID")
-    }
-
-    document.getElementById("debugGameID").innerText = window.gameID
-    fetch(`${window.backend}/game/${window.gameID}?player=${window.playerName}`, {
-        method: "PUT"
-    }).then((data) => {
-        window.playerID = data.order;
-        window.headers = new Headers({
-            "Authorization": `Bearer ${data.key}`
-        });
-        window.readyScreen();
-    })
 }
 
 function startGame() {
@@ -77,9 +90,7 @@ function startGame() {
             ...window.headers,
             'Content-Type': 'application/json',
         },
-    }).then((r) => {
-        return r.json();
-    }).then(data => {
+    }).then(() => {
         enterGame();
     })
 }
@@ -88,6 +99,8 @@ const enterGame = () => {
     main.classList.remove("hide");
     ready.classList.add("hide");
     menu.classList.add("hide");
+
+    window.update();
 }
 
 const loadExistingGame = () => {
