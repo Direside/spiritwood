@@ -30,6 +30,7 @@ if (!window.playerName) {
 }
 
 window.addEventListener('keyup', keyPress);
+window.changeName= changePlayerName;
 window.clearPlayName = clearPlayerName;
 
 // Menus
