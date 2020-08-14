@@ -13,6 +13,14 @@ pub struct GameConfig {
     pub tile_deck: i64
 }
 
+impl Default for GameConfig {
+    fn default() -> GameConfig {
+        GameConfig {
+            tile_deck: 10,
+        }
+    }
+}
+
 #[derive(Debug, Default)]
 pub struct Game {
     id: Uuid,
@@ -23,6 +31,7 @@ pub struct Game {
     current_player: usize, // Corresponds to index in players array.
     tile_stack: Vec<TileID>,
     tile_repo: TileRepository,
+    visible_tile: Option<Tile>,
     tilemap: TileMap,
     biomes: Vec<Biome>, // TODO: useful structure for these
     discard: Vec<Card>
@@ -90,9 +99,15 @@ impl Game {
     }
 
     pub fn pop_tile(&mut self) -> GameResult<Tile> {
-        self.tile_stack.pop().and_then(|tile_id| {
-            self.tile_repo.get(tile_id)
-        }).ok_or(GameplayError::ItemNotFound("No more tiles!"))
+        if self.visible_tile.is_some() {
+            Ok(self.visible_tile.as_ref().unwrap().clone())
+        } else {
+            self.tile_stack.pop().and_then(|tile_id| {
+                let tile = self.tile_repo.get(tile_id);
+                tile.as_ref().map(|t| { self.visible_tile = Some(t.clone())});
+                tile
+            }).ok_or(GameplayError::ItemNotFound("No more tiles!"))
+        }
     }
 
     pub fn get_player(&self, name: &str) -> Option<Player> {
@@ -158,6 +173,7 @@ impl Game {
 }
 
 type GameResult<T> = ::std::result::Result<T, GameplayError>;
+#[derive(Debug)]
 pub enum GameplayError {
     IllegalMove(&'static str),
     OutOfTurn(&'static str),
@@ -228,7 +244,7 @@ mod tests {
 
     #[test]
     fn test_game_description() {
-        let game = Game::create();
+        let game = Game::create(&Default::default());
 
         let desc = game.get_description();
         assert_eq!(desc.id, game.id);
@@ -240,7 +256,7 @@ mod tests {
 
     #[test]
     fn test_pop_tile() {
-        let mut game = Game::create();
+        let mut game = Game::create(&Default::default());
 
         let tile = game.pop_tile();
         assert!(tile.is_ok());
@@ -272,7 +288,7 @@ mod tests {
 
     #[test]
     fn turns() {
-        let mut game = Game::create();
+        let mut game = Game::create(&Default::default());
         game.join_new_player("alice".to_string());
         game.join_new_player("bob".to_string());
 
@@ -281,11 +297,21 @@ mod tests {
         game.start_game();
         assert_eq!(game.turn, 1);
         assert_eq!(game.current_player, 0);
-        game.end_turn();
+        assert!(game.end_turn().is_ok());
         assert_eq!(game.turn, 2);
         assert_eq!(game.current_player, 1);
-        game.end_turn();
+        assert!(game.end_turn().is_ok());
         assert_eq!(game.turn, 3);
         assert_eq!(game.current_player, 0);
+    }
+
+    #[test]
+    fn visible_tile() {
+        let mut game = Game::create(&Default::default());
+        game.start_game();
+        assert_eq!(game.visible_tile, None);
+        let tile = game.pop_tile().unwrap();
+        assert_eq!(game.visible_tile, Some(tile.clone()));
+        assert_eq!(game.pop_tile().unwrap(), tile.clone());
     }
 }
