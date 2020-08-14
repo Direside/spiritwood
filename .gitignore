@@ -1,5 +1,6 @@
 /.cache
 /dist
 /target
+images/raw/
 
 npm-debug.log

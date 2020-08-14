@@ -36,7 +36,12 @@ impl Tile {
         vec![
             Self::new(1, '+', "images/tiles/cross.png"),
             Self::new(2, '-', "images/tiles/straight.png"),
-            Self::new(3, 'T', "images/tiles/tee.png"),
+            Self::new(3, '-', "images/tiles/straight-river.png"),
+            Self::new(4, 'T', "images/tiles/branch.png"),
+            Self::new(5, 'L', "images/tiles/corner.png"),
+            Self::new(6, 'L', "images/tiles/corner-mine.png"),
+            Self::new(7, '.', "images/tiles/branch.png"),
+
         ]
      }
 }

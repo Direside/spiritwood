@@ -144,7 +144,7 @@ window.getNextTile = function getNextTile() {
     })
     .then(data => {
         window.tile = data
-        nextTileImage.innerHTML = `<img src='${data.image}' ondragstart='dragStart(event, ${data.id})' height='80 width='80' />`;
+        nextTileImage.innerHTML = `<img src='${data.image}' ondragstart='dragStart(event, ${data.id}, ${data.image})' height='80 width='80' />`;
     });
 }
 
