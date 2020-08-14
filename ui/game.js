@@ -35,9 +35,7 @@ function joinGame() {
     }).then((data) => {
         localStorage.setItem('playerIndex', data.order);
         window.playerID = data.order;
-        window.headers += new Headers({
-            "Authorization": `Bearer ${data.key}`
-        });
+        window.headers.append("Authorization", `Bearer ${data.key}`);
         window.readyScreen();
     })
 }
@@ -82,7 +80,7 @@ function getGame() {
 }
 
 function startGame() {
-    console.log(window.gettingPlayers)
+    console.log("hesda", ...window.headers)
     clearInterval(window.gettingPlayers);
     fetch(`${window.backend}/game/${window.gameID}/start`, {
         method: "PUT",
