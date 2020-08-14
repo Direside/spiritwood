@@ -45,7 +45,7 @@ impl Game {
         let biomes = Biome::load_biomes();
         let mut rng = thread_rng();
         let tile_repo = TileRepository::new(&tileset);
-        let tile_stack: Vec<u32> = (1..config.tile_deck).map(|_| {
+        let tile_stack: Vec<u32> = (0..config.tile_deck).map(|_| {
             tileset[rng.gen_range(1, tileset.len())].id
         }).collect();
 
@@ -174,6 +174,7 @@ impl Game {
         let next_player = (self.current_player + 1) % self.players.len();
         self.current_player = next_player;
         self.turn += 1;
+        self.visible_tile = None;
         Ok(())
     }
 }
@@ -322,6 +323,20 @@ mod tests {
     }
 
     #[test]
+    fn card_deck() {
+        let mut game = Game::create(&GameConfig { tile_deck: 2 });
+        game.join_new_player("alice".to_string());
+        game.join_new_player("bob".to_string());
+
+        game.start_game();
+        assert!(game.pop_tile().is_ok());
+        assert!(game.end_turn().is_ok());
+        assert!(game.pop_tile().is_ok());
+        assert!(game.end_turn().is_ok());
+        assert!(game.pop_tile().is_err());
+    }
+
+    #[test]
     fn is_my_turn() {
         let mut game = Game::create(&GameConfig { tile_deck: 3 });
         let alice = game.join_new_player("alice".to_string());
@@ -338,7 +353,7 @@ mod tests {
         // Should be alice's turn to start.
         assert_eq!(game.is_my_turn(alice.key), true);
         assert_eq!(game.is_my_turn(bob.key), false);
-        game.end_turn();
+        assert!(game.end_turn().is_ok());
         assert_eq!(game.turn, 2);
         assert_eq!(game.current_player, 1);
         // Now it's bob's turn
