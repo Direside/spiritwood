@@ -70,10 +70,10 @@ function getGame() {
             playersTurn.innerText = window.players[data.current_player];
 
             if (data.current_player != localStorage.getItem('playerIndex')){
-                console.log("not your turn", data.current_player, "!=", window.playerID)
+                window.yourTurn = false;
                 disablePlayerActions();
             } else {
-                console.log("it's your turn")
+                window.yourTurn = true;
                 enableGetTile();
             }
         })
@@ -110,13 +110,16 @@ const loadExistingGame = () => {
 }
 
 function endTurn() {
-    this.fetch(`${window.backend}/game/${window.gameID}/moves/endturn`, {
+    fetch(`${window.backend}/game/${window.gameID}/endturn`, {
         headers: {
             ...window.headers,
             'Content-Type': 'application/json',
         },
         method: "PUT"
-    })
+    }).then(() => {
+        window.yourTurn = false;
+        disablePlayerActions();
+    });
 }
 
 export { newGame, getGame, joinGame, startGame, enterGame, loadExistingGame, endTurn }

@@ -98,7 +98,8 @@ paint();
 
 getGame();
 setInterval(() => {
-    if (window.gameID) {
-        getGame()
+    if (window.gameID && !window.yourTurn) {
+        getGame();
+        paint();
     }
 }, 10000);

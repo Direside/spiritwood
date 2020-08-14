@@ -23,6 +23,7 @@ function disablePlayerActions() {
 
 function enableGetTile() {
     document.getElementById('get-tile').disabled = false;
+    document.getElementById('end').disabled = false;
 }
 
 export { readyScreen, creditScreen, disablePlayerActions, enableGetTile }
