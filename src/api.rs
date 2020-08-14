@@ -41,8 +41,8 @@ pub struct GameDescription {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Player {
     pub name: String,
-    order: usize,
-    key: Key
+    pub order: usize,
+    pub key: Key
     // colour? character?
 }
 

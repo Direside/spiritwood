@@ -1,4 +1,4 @@
-use crate::api::{GameDescription, Player, Move, GameState, PlacedTile, Tile};
+use crate::api::{GameDescription, Key, Player, Move, GameState, PlacedTile, Tile};
 use crate::state::{Biome, Card};
 use rand::thread_rng;
 use rand::Rng;
@@ -137,8 +137,14 @@ impl Game {
                 }
             }
         }
-        
+
         Ok(result)
+    }
+
+    pub fn is_my_turn(&self, player_key: Key) -> bool {
+        self.turn != 0 && self.players.get(self.current_player)
+            .filter(|p| { p.key == player_key })
+            .is_some()
     }
 
     pub fn apply(&mut self, action: Move) -> GameResult<()> {
@@ -313,5 +319,30 @@ mod tests {
         let tile = game.pop_tile().unwrap();
         assert_eq!(game.visible_tile, Some(tile.clone()));
         assert_eq!(game.pop_tile().unwrap(), tile.clone());
+    }
+
+    #[test]
+    fn is_my_turn() {
+        let mut game = Game::create(&GameConfig { tile_deck: 3 });
+        let alice = game.join_new_player("alice".to_string());
+        let bob = game.join_new_player("bob".to_string());
+
+        assert_eq!(game.turn, 0);
+        assert_eq!(game.current_player, 0);
+        // Should be nobody's turn before game is started.
+        assert_eq!(game.is_my_turn(alice.key), false);
+        assert_eq!(game.is_my_turn(bob.key), false);
+        game.start_game();
+        assert_eq!(game.turn, 1);
+        assert_eq!(game.current_player, 0);
+        // Should be alice's turn to start.
+        assert_eq!(game.is_my_turn(alice.key), true);
+        assert_eq!(game.is_my_turn(bob.key), false);
+        game.end_turn();
+        assert_eq!(game.turn, 2);
+        assert_eq!(game.current_player, 1);
+        // Now it's bob's turn
+        assert_eq!(game.is_my_turn(bob.key), true);
+        assert_eq!(game.is_my_turn(alice.key), false);
     }
 }
