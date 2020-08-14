@@ -5,9 +5,7 @@ function readyScreen() {
     menu.classList.add("hide");
 
     location.href = `http://localhost:5000/#${window.gameID}`
-
-    window.updatePlayerList()
-    window.gettingPlayers = setInterval(window.updatePlayerList, 1000);
+    window.update();
 }
 
 function creditScreen() {

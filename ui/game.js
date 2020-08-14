@@ -6,10 +6,9 @@ function newGame() {
     fetch(`${window.backend}/game`, {
         // mode: 'no-cors',
         method: "POST",
-        headers: new Headers({
-            "Access-Control-Allow-Origin": "*",
-            'Access-Control-Allow-Headers': "*"
-        })
+        headers: {
+            ...window.headers
+        }
     })
         .then((response) => {
             return response.json();
@@ -24,6 +23,9 @@ function newGame() {
 
 function getGame() {
     fetch(`${window.backend}/game/${window.gameID}/`, {
+        headers: {
+            ...window.headers
+        },
         method: "GET"
     })
         .then((response) => {
@@ -41,6 +43,9 @@ function getGame() {
             })
 
             players.innerHTML = playersHTML
+
+            let playersTurn = document.getElementById('players-turn')
+            playersTurn.innerText = window.players[0];
         })
 }
 
@@ -56,7 +61,7 @@ function joinGame() {
         method: "PUT"
     }).then((data) => {
         window.playerID = data.order;
-        window.header = new Headers({
+        window.headers = new Headers({
             "Authorization": `Bearer ${data.key}`
         });
         window.readyScreen();
@@ -67,7 +72,11 @@ function startGame() {
     console.log(window.gettingPlayers)
     clearInterval(window.gettingPlayers);
     fetch(`${window.backend}/game/${window.gameID}/start`, {
-        method: "PUT"
+        method: "PUT",
+        headers: {
+            ...window.headers,
+            'Content-Type': 'application/json',
+        },
     }).then((r) => {
         return r.json();
     }).then(data => {
@@ -91,7 +100,10 @@ const loadExistingGame = () => {
 
 function endTurn() {
     this.fetch(`${window.backend}/game/${window.gameID}/moves/endturn`, {
-        headers: window.headers,
+        headers: {
+            ...window.headers,
+            'Content-Type': 'application/json',
+        },
         method: "PUT"
     })
 }

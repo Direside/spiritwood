@@ -11,6 +11,12 @@ import { readyScreen, creditScreen } from './menu.js';
 // Set up global functions
 window.backend = "http://localhost:8000";
 
+window.headers = new Headers({
+    "Access-Control-Allow-Origin": "*",
+    'Access-Control-Allow-Headers': "*",
+    "Content-Type": "application/json"
+});
+
 // Player
 const name = document.getElementById("playerName");
 window.players = [];
@@ -35,7 +41,7 @@ window.newGame = newGame;
 window.joinGame = joinGame;
 window.startGame = startGame;
 window.endTurn = endTurn;
-window.updatePlayerList = getGame;
+window.update = getGame;
 
 // Tiles
 window.getNextTile = getNextTile;
@@ -89,4 +95,8 @@ async function paint() {
 loadExistingGame();
 paint();
 
-setInterval(getGame, 1000);
+setInterval(() => {
+    if (window.gameID) {
+        getGame()
+    }
+}, 10000);
