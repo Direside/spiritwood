@@ -11,6 +11,6 @@ rocket_cors = "0.5.1"
 serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"
-im = "14.3.0"
+im = "15.1.0"
 rand = "0.7.3"
 uuid = { version = "0.8.1", features = ["serde", "v4"] }
